@@ -1,390 +1,458 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>きゅうしょくバランスゲーム</title>
-  <style>
-    * { box-sizing: border-box; font-family: 'Helvetica Neue', Arial, sans-serif; }
-    body { background-color: #f0f8ff; margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .container { max-width: 850px; width: 100%; background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
-    h1 { text-align: center; color: #333; font-size: 1.5rem; margin-top: 0; }
-    .status-header { text-align: center; font-weight: bold; color: #555; margin-bottom: 15px; background: #eccc68; padding: 8px; border-radius: 8px; font-size: 1.1rem; }
-    .main-layout { display: flex; flex-wrap: wrap; gap: 20px; }
-    
-    /* 左側：給食・選択エリア */
-    .left-panel { flex: 1.2; min-width: 300px; }
-    .dishes-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
-    .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .dish-title { font-size: 1rem; font-weight: bold; color: #2d3436; }
-    .radio-group { display: flex; justify-content: space-between; gap: 6px; }
-    .radio-label { flex: 1; text-align: center; background: white; border: 2px solid #ddd; padding: 8px 4px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-    .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
-    .radio-group input[type="radio"] { display: none; }
-    .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; }
-    
-    /* 右側：横型メーター＆キャラクター */
-    .right-panel { flex: 1; min-width: 280px; background: #fafafa; padding: 15px; border-radius: 12px; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
-    .meter-container { width: 100%; margin-bottom: 15px; }
-    .meter-label { font-size: 0.85rem; font-weight: bold; margin-bottom: 3px; display: flex; justify-content: space-between; }
-    
-    /* 横型メーター領域 */
-    .meter-bar-outer { position: relative; height: 22px; width: 100%; background: #e0e0e0; border-radius: 11px; margin-bottom: 12px; overflow: visible; }
-    .meter-fill { height: 100%; width: 0%; transition: width 0.4s ease-in-out; border-radius: 11px; }
-    
-    /* 色分け */
-    .fill-yellow { background: #fdcb6e; }
-    .fill-red { background: #ff7675; }
-    .fill-green { background: #55efc4; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>えらんで給食バランスゲーム</title>
+  <style>
+    * { box-sizing: border-box; font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif; }
+    body { background-color: #eef9ff; margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { max-width: 900px; width: 100%; background: #ffffff; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: 4px solid #74b9ff; }
+    
+    h1 { text-align: center; color: #2d3436; font-size: 1.6rem; margin: 0 0 10px 0; letter-spacing: 1px; }
+    .status-header { text-align: center; font-weight: bold; color: #d63031; margin-bottom: 15px; background: #ffeaa7; padding: 10px; border-radius: 12px; font-size: 1.2rem; border: 2px dashed #fdcb6e; }
+    
+    .main-layout { display: flex; flex-wrap: wrap; gap: 15px; }
+    
+    /* 左側：給食・選択エリア */
+    .left-panel { flex: 1.2; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between; }
+    .guide-title { font-weight: bold; text-align: center; margin: 0 0 10px 0; color: #0984e3; font-size: 1.05rem; background: #e3f2fd; padding: 8px; border-radius: 8px; }
+    
+    .dishes-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 10px 12px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .dish-title { font-size: 1.05rem; font-weight: bold; color: #2d3436; display: flex; align-items: center; justify-content: space-between; }
+    .dish-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; }
+    .tag-yellow { background: #e17055; }
+    .tag-red { background: #d63031; }
+    .tag-green { background: #00b894; }
 
-    /* 満タンライン（83.33% の位置） */
-    .border-line-100 { position: absolute; left: 83.33%; top: 0; height: 100%; border-left: 2px dashed #d63031; z-index: 2; pointer-events: none; }
-    .border-label { position: absolute; left: 83.33%; top: -14px; transform: translateX(-50%); font-size: 0.65rem; color: #d63031; font-weight: bold; background: rgba(255,255,255,0.9); padding: 0 4px; border-radius: 3px; white-space: nowrap; }
+    .radio-group { display: flex; justify-content: space-between; gap: 6px; }
+    .radio-group input[type="radio"] { display: none; }
+    .radio-label { flex: 1; text-align: center; background: white; border: 2px solid #ccc; padding: 8px 2px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #555; }
+    .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
+    .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; box-shadow: 0 3px 0 #0984e3; transform: translateY(-2px); }
 
-    /* キャラクター表示部 */
-    .char-box { text-align: center; width: 100%; }
-    .char-avatar { font-size: 4rem; margin: 2px 0; transition: transform 0.3s; }
-    .speech-bubble { background: #74b9ff; color: white; padding: 10px; border-radius: 12px; font-weight: bold; position: relative; min-height: 70px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-align: center; }
-    
-    .btn-submit { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .btn-submit:hover { background: #00876c; }
-    .btn-reset { margin-top: 10px; padding: 6px 12px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    /* 右側：メーター＆キャラクター */
+    .right-panel { flex: 1; min-width: 290px; background: #fafafa; padding: 12px; border-radius: 16px; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
 
-    /* 🌟 全画面ひょうか画面（モーダル） */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-    .modal-content { background: white; padding: 25px; border-radius: 20px; max-width: 600px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
-    .modal-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-top: 0; margin-bottom: 10px; }
-    .modal-avatar { font-size: 5.5rem; margin: 10px 0; }
-    .modal-bubble { background: #74b9ff; color: white; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; line-height: 1.4; }
-    .modal-btn { padding: 12px 24px; background: #0984e3; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-    .modal-btn:hover { background: #076bba; }
-  </style>
+    /* ゴールドメーター（横型・強調表示） */
+    .gold-box { width: 100%; background: #fffdf0; border: 3px solid #f1c40f; padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; box-shadow: 0 3px 8px rgba(241,196,15,0.2); }
+    .gold-title { font-size: 0.95rem; font-weight: bold; color: #d35400; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .gold-meter-outer { position: relative; height: 24px; width: 100%; background: #eee; border-radius: 12px; overflow: hidden; border: 1px solid #ccc; }
+    .gold-meter-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #f1c40f, #f39c12); transition: width 0.5s ease-out; border-radius: 12px; }
+    .gold-hint { font-size: 0.75rem; color: #e67e22; margin-top: 6px; font-weight: bold; line-height: 1.2; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+
+    /* 3色メーター（縦型棒グラフエリア） */
+    .vertical-meters-container { display: flex; justify-content: space-around; width: 100%; height: 160px; background: #fff; border: 2px solid #e0e0e0; padding: 10px 5px 5px 5px; border-radius: 12px; margin-bottom: 10px; position: relative; }
+    .v-meter-group { display: flex; flex-direction: column; align-items: center; height: 100%; width: 28%; position: relative; }
+    
+    .v-meter-track { position: relative; width: 36px; flex: 1; background: #f0f0f0; border-radius: 18px; border: 2px solid #ccc; overflow: hidden; display: flex; flex-direction: column-reverse; }
+    .v-meter-fill { width: 100%; height: 0%; transition: height 0.5s ease-out; border-radius: 0 0 16px 16px; }
+    
+    .fill-yellow { background: linear-gradient(0deg, #f1c40f, #fed330); }
+    .fill-red { background: linear-gradient(0deg, #e74c3c, #ff7675); }
+    .fill-green { background: linear-gradient(0deg, #2ecc71, #55efc4); }
+
+    .v-meter-label { font-size: 0.75rem; font-weight: bold; margin-top: 4px; text-align: center; }
+    .v-meter-val { font-size: 0.8rem; font-weight: bold; color: #333; margin-top: 2px; }
+    
+    /* ボトルネック（最低値）強調マーカー */
+    .limit-marker { position: absolute; top: -12px; background: #e74c3c; color: white; font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; font-weight: bold; display: none; animation: pulse 1s infinite alternate; }
+    @keyframes pulse { 0% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1.05); } }
+
+    /* キャラクターエリア */
+    .char-box { text-align: center; width: 100%; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; border-radius: 10px; border: 1px solid #e0e0e0; }
+    .char-avatar { font-size: 2.8rem; transition: transform 0.3s; line-height: 1; }
+    .speech-bubble { flex: 1; background: #74b9ff; color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 0.82rem; text-align: left; line-height: 1.3; min-height: 48px; display: flex; align-items: center; }
+
+    .btn-submit { width: 100%; padding: 14px; background: #2ecc71; color: white; border: none; border-radius: 10px; font-size: 1.15rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #27ae60; transition: all 0.1s; }
+    .btn-submit:active { transform: translateY(3px); box-shadow: 0 1px 0 #27ae60; }
+    .btn-reset { margin-top: 8px; padding: 5px 10px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
+
+    /* 全画面評価画面（モーダル） */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+    .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 550px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 1.4rem; font-weight: bold; color: #2d3436; margin: 0 0 10px 0; }
+    .modal-avatar { font-size: 4.5rem; margin: 5px 0; }
+    .modal-bubble { background: #74b9ff; color: white; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: bold; margin-bottom: 15px; line-height: 1.4; text-align: left; }
+    .modal-btn { padding: 12px 30px; background: #0984e3; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #076bba; }
+    .modal-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #076bba; }
+  </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>きゅうしょくバランスゲーム</h1>
-  <div id="meal-stage" class="status-header">1日目：月ようび</div>
-  
-  <div class="main-layout">
-    <!-- 左側：お皿ごとの選択肢 -->
-    <div class="left-panel">
-      <p style="font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 12px;">
-        きょうのきゅうしょくの たべかたを えらぼう！
-      </p>
+  <h1>🍱 えらんで給食バランスゲーム</h1>
+  <div id="meal-stage" class="status-header">1日目：月ようび</div>
+  
+  <div class="main-layout">
+    <!-- 左側：お皿ごとの選択肢 -->
+    <div class="left-panel">
+      <div class="guide-title">きょうの 給食の たべかたを えらぼう！</div>
+      <div id="dishes-container" class="dishes-container"></div>
+      <button id="submit-btn" class="btn-submit" onclick="submitMeal()">決定！ つぎの日へ ➔</button>
+    </div>
 
-      <div id="dishes-container" class="dishes-container"></div>
+    <!-- 右側：縦型メーター＆ゴールド＆キャラ -->
+    <div class="right-panel">
+      <!-- せいちょうゴールドメーター -->
+      <div class="gold-box">
+        <div class="gold-title">
+          <span>✨ せいちょうゴールド</span>
+          <span id="gold-val">0 / 100 pt</span>
+        </div>
+        <div class="gold-meter-outer">
+          <div id="gold-fill" class="gold-meter-fill"></div>
+        </div>
+        <div id="gold-hint" class="gold-hint">3つの栄養がバランスよくたまると、ゴールドが増えるよ！</div>
+      </div>
 
-      <button id="submit-btn" class="btn-submit" onclick="submitMeal()">けってい！ ➔</button>
-    </div>
+      <!-- 3色 縦型メーター -->
+      <div class="vertical-meters-container" id="meters-box">
+        <!-- 黄色 -->
+        <div class="v-meter-group">
+          <div id="marker-yellow" class="limit-marker">⚠️これが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-yellow" class="v-meter-fill fill-yellow"></div>
+          </div>
+          <div class="v-meter-label" style="color:#d35400;">黄 (ねつ)</div>
+          <div id="val-yellow" class="v-meter-val">0</div>
+        </div>
 
-    <!-- 右側：横型メーター＆キャラクター -->
-    <div class="right-panel">
-      <div id="meter-box" class="meter-container">
-        <!-- 1. 黄色メーター -->
-        <div class="meter-label" style="color:#e17055;">
-          <span>黄（エネルギーのもと）</span>
-        </div>
-        <div class="meter-bar-outer">
-          <div class="border-line-100"></div>
-          <div class="border-label">まんたん</div>
-          <div id="meter-yellow" class="meter-fill fill-yellow"></div>
-        </div>
+        <!-- 赤色 -->
+        <div class="v-meter-group">
+          <div id="marker-red" class="limit-marker">⚠️これが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-red" class="v-meter-fill fill-red"></div>
+          </div>
+          <div class="v-meter-label" style="color:#c0392b;">赤 (からだ)</div>
+          <div id="val-red" class="v-meter-val">0</div>
+        </div>
 
-        <!-- 2. 赤色メーター -->
-        <div class="meter-label" style="color:#d63031;">
-          <span>赤（からだをつくる）</span>
-        </div>
-        <div class="meter-bar-outer">
-          <div class="border-line-100"></div>
-          <div class="border-label">まんたん</div>
-          <div id="meter-red" class="meter-fill fill-red"></div>
-        </div>
+        <!-- 緑色 -->
+        <div class="v-meter-group">
+          <div id="marker-green" class="limit-marker">⚠️これが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-green" class="v-meter-fill fill-green"></div>
+          </div>
+          <div class="v-meter-label" style="color:#27ae60;">緑 (ちょうし)</div>
+          <div id="val-green" class="v-meter-val">0</div>
+        </div>
+      </div>
 
-        <!-- 3. 緑色メーター -->
-        <div class="meter-label" style="color:#00b894;">
-          <span>緑（ちょうしを ととのえる）</span>
-        </div>
-        <div class="meter-bar-outer">
-          <div class="border-line-100"></div>
-          <div class="border-label">まんたん</div>
-          <div id="meter-green" class="meter-fill fill-green"></div>
-        </div>
-      </div>
+      <!-- キャラクター表示部 -->
+      <div class="char-box">
+        <div id="char-avatar" class="char-avatar">🧍</div>
+        <div id="speech-bubble" class="speech-bubble">
+          メニューごとに「ひとくち・はんぶん・ぜんぶ」をえらんでね！
+        </div>
+      </div>
 
-      <div class="char-box">
-        <div id="char-avatar" class="char-avatar">🧍</div>
-        <div id="speech-bubble" class="speech-bubble">
-          お皿ごとに たべかたを えらんでね！
-        </div>
-      </div>
-
-      <button class="btn-reset" onclick="resetGame()">あたらしく やりなおす</button>
-    </div>
-  </div>
+      <button class="btn-reset" onclick="resetGame()">はじめから やりなおす</button>
+    </div>
+  </div>
 </div>
 
-<!-- 🌟 5日分かんりょう時の ぜんめん ひょうか画面 -->
+<!-- 5日分完了時の 全画面評価画面 -->
 <div id="final-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-title">🎉 5日かんの ぜんぶのけっか 🎉</div>
-    <div id="modal-avatar" class="modal-avatar">👑</div>
-    <div id="modal-bubble" class="modal-bubble">コメントがここに入ります</div>
-    
-    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left;">【さいごの えいようメーター】</div>
-    <div id="modal-meters-clone"></div>
+  <div class="modal-content">
+    <div class="modal-title">🎉 5日間の けっか はっぴょう 🎉</div>
+    <div id="modal-avatar" class="modal-avatar">👑</div>
+    <div id="modal-bubble" class="modal-bubble">コメントが入ります</div>
+    
+    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left; font-size: 0.9rem;">【さいごの 栄養メーター】</div>
+    <div id="modal-meters-clone" style="margin-bottom: 15px;"></div>
 
-    <button class="modal-btn" onclick="resetGame()">もう一度 チャレンジする</button>
-  </div>
+    <button class="modal-btn" onclick="resetGame()">もういちど チャレンジ！</button>
+  </div>
 </div>
 
 <script>
-  // Web Audio API による効果音生成
-  let audioCtx = null;
+  // Web Audio API（効果音）
+  let audioCtx = null;
 
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  }
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
 
-  function playSound(type) {
-    initAudio();
-    if (!audioCtx) return;
+  function playSound(type) {
+    initAudio();
+    if (!audioCtx) return;
 
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
 
-    const now = audioCtx.currentTime;
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'submit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.08); 
+      osc.frequency.setValueAtTime(783.99, now + 0.16); 
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (type === 'finish') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.12); 
+      osc.frequency.setValueAtTime(783.99, now + 0.24); 
+      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    } else if (type === 'reset') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    }
+  }
 
-    if (type === 'click') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, now);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-      osc.start(now);
-      osc.stop(now + 0.1);
-    } else if (type === 'submit') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, now); 
-      osc.frequency.setValueAtTime(659.25, now + 0.08); 
-      osc.frequency.setValueAtTime(783.99, now + 0.16); 
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-      osc.start(now);
-      osc.stop(now + 0.35);
-    } else if (type === 'finish') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, now); 
-      osc.frequency.setValueAtTime(659.25, now + 0.12); 
-      osc.frequency.setValueAtTime(783.99, now + 0.24); 
-      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
-      gain.gain.setValueAtTime(0.25, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
-      osc.start(now);
-      osc.stop(now + 0.7);
-    } else if (type === 'reset') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-      osc.start(now);
-      osc.stop(now + 0.15);
-    }
-  }
+  // 給食スケジュールデータ（全5日分）
+  const schedule = [
+    {
+      day: "1日目：月ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🐟 さばのみそ煮", color: "red", tag: "赤：体をつくる" },
+        { name: "🥬 いそかあえ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "2日目：火ようび",
+      dishes: [
+        { name: "🍞 コッペパン", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍳 オムレツ", color: "red", tag: "赤：体をつくる" },
+        { name: "サラダ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "3日目：水ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍳 たまごやき", color: "red", tag: "赤：体をつくる" },
+        { name: "🥔 肉じゃが", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "4日目：木ようび",
+      dishes: [
+        { name: "🍙 わかめごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍗 とりのからあげ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥢 ナムル", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "5日目：金ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🐟 ししゃもフライ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥬 ごまあえ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    }
+  ];
 
-  const schedule = [
-    {
-      day: "1日目：月ようび",
-      dishes: [
-        { name: "🍚 ごはん", color: "yellow" },
-        { name: "🐟 さばのみそに", color: "red" },
-        { name: "🥬 いそかあえ", color: "green" }
-      ]
-    },
-    {
-      day: "2日目：火ようび",
-      dishes: [
-        { name: "🍞 パン", color: "yellow" },
-        { name: "🍳 オムレツ", color: "red" },
-        { name: "🥗 サラダ", color: "green" }
-      ]
-    },
-    {
-      day: "3日目：水ようび",
-      dishes: [
-        { name: "🍚 ごはん", color: "yellow" },
-        { name: "🍳 たまごやき", color: "red" },
-        { name: "🥔 肉じゃが", color: "green" }
-      ]
-    },
-    {
-      day: "4日目：木ようび",
-      dishes: [
-        { name: "🍙 わかめごはん", color: "yellow" },
-        { name: "🍗 からあげ", color: "red" },
-        { name: "🥢 ナムル", color: "green" }
-      ]
-    },
-    {
-      day: "5日目：金ようび",
-      dishes: [
-        { name: "🍚 ごはん", color: "yellow" },
-        { name: "🐟 ししゃもフライ", color: "red" },
-        { name: "🥬 ごまあえ", color: "green" }
-      ]
-    }
-  ];
+  let currentDay = 0;
+  let totalYellow = 0;
+  let totalRed = 0;
+  let totalGreen = 0;
 
-  let currentDay = 0;
-  let totalRed = 0;
-  let totalYellow = 0;
-  let totalGreen = 0;
+  function initGame() {
+    currentDay = 0;
+    totalYellow = 0;
+    totalRed = 0;
+    totalGreen = 0;
+    document.getElementById('final-modal').style.display = 'none';
+    updateMetersAndAvatar();
+    loadDay(currentDay);
+  }
 
-  function initGame() {
-    currentDay = 0;
-    totalRed = 0;
-    totalYellow = 0;
-    totalGreen = 0;
-    document.getElementById('final-modal').style.display = 'none';
-    updateMetersAndAvatar();
-    loadDay(currentDay);
-  }
+  function loadDay(dayIndex) {
+    const dayData = schedule[dayIndex];
+    document.getElementById('meal-stage').innerText = dayData.day;
+    
+    const container = document.getElementById('dishes-container');
+    container.innerHTML = '';
 
-  function loadDay(dayIndex) {
-    const dayData = schedule[dayIndex];
-    document.getElementById('meal-stage').innerText = dayData.day;
-    
-    const container = document.getElementById('dishes-container');
-    container.innerHTML = '';
+    dayData.dishes.forEach((dish, idx) => {
+      const card = document.createElement('div');
+      card.className = 'dish-card';
+      
+      let tagClass = 'tag-yellow';
+      if (dish.color === 'red') tagClass = 'tag-red';
+      if (dish.color === 'green') tagClass = 'tag-green';
 
-    dayData.dishes.forEach((dish, idx) => {
-      const card = document.createElement('div');
-      card.className = 'dish-card';
-      card.innerHTML = `
-        <div class="dish-title">${dish.name}</div>
-        <div class="radio-group">
-          <input type="radio" id="dish_${idx}_less" name="dish_${idx}" value="10" onchange="playSound('click')">
-          <label for="dish_${idx}_less" class="radio-label">へらす・のこす</label>
+      card.innerHTML = `
+        <div class="dish-title">
+          <span>${dish.name}</span>
+          <span class="dish-tag ${tagClass}">${dish.tag}</span>
+        </div>
+        <div class="radio-group">
+          <input type="radio" id="dish_${idx}_1" name="dish_${idx}" value="5" onchange="playSound('click')">
+          <label for="dish_${idx}_1" class="radio-label">ひとくち</label>
 
-          <input type="radio" id="dish_${idx}_normal" name="dish_${idx}" value="20" checked onchange="playSound('click')">
-          <label for="dish_${idx}_normal" class="radio-label">ぜんぶ たべる</label>
+          <input type="radio" id="dish_${idx}_2" name="dish_${idx}" value="10" onchange="playSound('click')">
+          <label for="dish_${idx}_2" class="radio-label">はんぶん</label>
 
-          <input type="radio" id="dish_${idx}_more" name="dish_${idx}" value="30" onchange="playSound('click')">
-          <label for="dish_${idx}_more" class="radio-label">おかわり</label>
-        </div>
-      `;
-      container.appendChild(card);
-    });
+          <input type="radio" id="dish_${idx}_3" name="dish_${idx}" value="20" checked onchange="playSound('click')">
+          <label for="dish_${idx}_3" class="radio-label">ぜんぶたべる</label>
+        </div>
+      `;
+      container.appendChild(card);
+    });
 
-    const submitBtn = document.getElementById('submit-btn');
-    submitBtn.innerText = (dayIndex < 4) ? "けってい！ つぎの日へ ➔" : "けってい！ けっかを 見る ➔";
-    document.getElementById('speech-bubble').innerText = "お皿ごとに たべかたを えらんで「けってい！」を おしてね！";
-  }
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = (dayIndex < 4) ? "決定！ つぎの日へ ➔" : "決定！ 結果を見る ➔";
+    document.getElementById('speech-bubble').innerText = "お皿ごとに 食べ方をえらんで「決定！」をおしてね！";
+  }
 
-  function submitMeal() {
-    const dayData = schedule[currentDay];
+  function submitMeal() {
+    const dayData = schedule[currentDay];
 
-    dayData.dishes.forEach((dish, idx) => {
-      const selectedValue = parseInt(document.querySelector(`input[name="dish_${idx}"]:checked`).value);
-      if (dish.color === 'red') totalRed += selectedValue;
-      if (dish.color === 'yellow') totalYellow += selectedValue;
-      if (dish.color === 'green') totalGreen += selectedValue;
-    });
+    dayData.dishes.forEach((dish, idx) => {
+      const selectedValue = parseInt(document.querySelector(`input[name="dish_${idx}"]:checked`).value);
+      if (dish.color === 'yellow') totalYellow += selectedValue;
+      if (dish.color === 'red') totalRed += selectedValue;
+      if (dish.color === 'green') totalGreen += selectedValue;
+    });
 
-    updateMetersAndAvatar();
+    updateMetersAndAvatar();
 
-    if (currentDay < 4) {
-      playSound('submit');
-      currentDay++;
-      loadDay(currentDay);
-    } else {
-      playSound('finish');
-      showFinalResult();
-    }
-  }
+    if (currentDay < 4) {
+      playSound('submit');
+      currentDay++;
+      loadDay(currentDay);
+    } else {
+      playSound('finish');
+      showFinalResult();
+    }
+  }
 
-  function updateMetersAndAvatar() {
-    const maxBarPt = 120;
-    const yellowPct = Math.round((totalYellow / maxBarPt) * 100);
-    const redPct = Math.round((totalRed / maxBarPt) * 100);
-    const greenPct = Math.round((totalGreen / maxBarPt) * 100);
+  function updateMetersAndAvatar() {
+    // 5日間ぜんぶ（20pt×5日 = 100pt）を最大値とする
+    const maxVal = 100;
 
-    document.getElementById('meter-yellow').style.width = yellowPct + '%';
-    document.getElementById('meter-red').style.width = redPct + '%';
-    document.getElementById('meter-green').style.width = greenPct + '%';
+    // 100%を上限として計算
+    const yellowPct = Math.min(100, Math.round((totalYellow / maxVal) * 100));
+    const redPct = Math.min(100, Math.round((totalRed / maxVal) * 100));
+    const greenPct = Math.min(100, Math.round((totalGreen / maxVal) * 100));
 
-    const avatar = document.getElementById('char-avatar');
+    // 縦型メーター更新
+    document.getElementById('meter-yellow').style.height = yellowPct + '%';
+    document.getElementById('meter-red').style.height = redPct + '%';
+    document.getElementById('meter-green').style.height = greenPct + '%';
 
-    if (totalYellow >= 120) {
-      avatar.innerText = "🫃"; 
-    } else if (totalYellow < 40 && totalRed < 40 && totalGreen < 40 && currentDay >= 2) {
-      avatar.innerText = "💀"; 
-    } else if (totalYellow < 40 && totalGreen >= 60) {
-      avatar.innerText = "😫"; 
-    } else if (totalGreen >= 60 && totalRed >= 60 && totalYellow >= 60) {
-      avatar.innerText = "😃"; 
-    } else {
-      avatar.innerText = "🧍"; 
-    }
-  }
+    document.getElementById('val-yellow').innerText = totalYellow;
+    document.getElementById('val-red').innerText = totalRed;
+    document.getElementById('val-green').innerText = totalGreen;
 
-  // 5日間の けっか・コメント表示
-  function showFinalResult() {
-    let resultAvatar = "😃";
-    let resultMsg = "";
+    // 🌟 ゴールドメーター計算（最小の値に依存）
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    const goldPct = Math.min(100, Math.round((minVal / maxVal) * 100));
 
-    const isPerfect = totalRed === 100 && totalYellow === 100 && totalGreen === 100;
+    document.getElementById('gold-fill').style.width = goldPct + '%';
+    document.getElementById('gold-val').innerText = `${minVal} / 100 pt`;
 
-    if (isPerfect) {
-      resultAvatar = "👑";
-      resultMsg = "【パーフェクト！】まいにち のこさず ぜんぶ たべたね！すべての メーターが ピッタリ まんたん！";
-    } else if (totalRed >= 100 && totalYellow >= 100 && totalGreen >= 100) {
-      resultAvatar = "🦸‍♂️";
-      resultMsg = "【スーパー けんこうボディ！】おかわりも して まんたんラインを こえたよ！パワフルに すごせるね！";
-    } else if (totalYellow >= 120) {
-      resultAvatar = "🫃";
-      resultMsg = "【黄色メーター オーバー！】ごはんや パンの おかわりが おおくて おねかが ポッコリ！おかずも たべよう！";
-    } else if (totalRed >= 120) {
-      resultAvatar = "🥩";
-      resultMsg = "【赤メーター オーバー！】お肉や お魚の おかわりが おおいよ！やさい（緑）も バランスよく たべよう！";
-    } else if (totalGreen >= 100 && totalYellow < 80) {
-      resultAvatar = "😫";
-      resultMsg = "【パワーぶそく…】やさいは バッチリ たべたけど、ごはんを のこしぎみで ちからが でない…つかれた〜";
-    } else if (totalGreen < 60) {
-      resultAvatar = "🥀";
-      resultMsg = "【緑（やさい）ぶそく！】やさいを のこすことが おおかったみたい…からだの ちょうしが 上がらないよ〜！";
-    } else if (totalRed < 60 || totalYellow < 60 || totalGreen < 60) {
-      resultAvatar = "💀";
-      resultMsg = "【へらしすぎ・のこしすぎ…】ぜんたい的に えいようが たりてないよ〜！たおれちゃいそう…！";
-    } else {
-      resultAvatar = "😃";
-      resultMsg = "【おしい！あと少し！】のこさず たべる くふうをして、つぎは ぜんぶ まんたんを めざそう！";
-    }
+    // ボトルネック（限界表示）の更新
+    document.getElementById('marker-yellow').style.display = 'none';
+    document.getElementById('marker-red').style.display = 'none';
+    document.getElementById('marker-green').style.display = 'none';
 
-    // モーダルへセット
-    document.getElementById('modal-avatar').innerText = resultAvatar;
-    document.getElementById('modal-bubble').innerText = resultMsg;
-    
-    // メーターをコピーしてセット
-    const meterClone = document.getElementById('meter-box').cloneNode(true);
-    const cloneContainer = document.getElementById('modal-meters-clone');
-    cloneContainer.innerHTML = '';
-    cloneContainer.appendChild(meterClone);
+    const hintElem = document.getElementById('gold-hint');
 
-    // ひょうか画面（モーダル）をひらく
-    document.getElementById('final-modal').style.display = 'flex';
-  }
+    if (currentDay > 0 || totalYellow > 0 || totalRed > 0 || totalGreen > 0) {
+      if (minVal === totalYellow && totalYellow < totalRed && totalYellow < totalGreen) {
+        document.getElementById('marker-yellow').style.display = 'block';
+        hintElem.innerText = "⚠️【黄 (ごはんなど)】がたりなくて ゴールドが増えないよ！";
+      } else if (minVal === totalRed && totalRed < totalYellow && totalRed < totalGreen) {
+        document.getElementById('marker-red').style.display = 'block';
+        hintElem.innerText = "⚠️【赤 (魚・肉など)】がたりなくて ゴールドが増えないよ！";
+      } else if (minVal === totalGreen && totalGreen < totalYellow && totalGreen < totalRed) {
+        document.getElementById('marker-green').style.display = 'block';
+        hintElem.innerText = "⚠️【緑 (野菜など)】がたりなくて ゴールドが増えないよ！";
+      } else if (totalYellow === totalRed && totalRed === totalGreen) {
+        hintElem.innerText = "✨ すごい！3つの栄養がバランスよく たまっているよ！";
+      } else {
+        hintElem.innerText = "⚠️ 一番すくない栄養に合わせて ゴールドがたまるよ！";
+      }
+    }
 
-  function resetGame() {
-    playSound('reset');
-    initGame();
-  }
+    // キャラクターのリアクション
+    const avatar = document.getElementById('char-avatar');
+    if (goldPct >= 100) {
+      avatar.innerText = "👑";
+    } else if (goldPct >= 70) {
+      avatar.innerText = "😃";
+    } else if (totalGreen <= 20 && currentDay >= 2) {
+      avatar.innerText = "😫"; // 野菜不足
+    } else if (totalYellow <= 20 && currentDay >= 2) {
+      avatar.innerText = "🥱"; // エネルギー不足
+    } else {
+      avatar.innerText = "🧍";
+    }
+  }
 
-  window.onload = initGame;
+  // 最終結果モーダルの表示
+  function showFinalResult() {
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    let resultAvatar = "😃";
+    let resultMsg = "";
+
+    if (minVal >= 100) {
+      resultAvatar = "👑";
+      resultMsg = "【パーフェクト！ゴールドまんたん！】\n毎日のこさず全部たべたね！「黄・赤・緑」の栄養がバッチリそろって、せいちょうパワーが全開です！";
+    } else if (minVal >= 70) {
+      resultAvatar = "🦸‍♂️";
+      resultMsg = "【ゴールド かなり高め！】\nバランスよく食べることができたね！あと少しでパーフェクト！苦手なものも一口ずつ挑戦してみよう！";
+    } else if (totalGreen < totalYellow && totalGreen < totalRed) {
+      resultAvatar = "🥀";
+      resultMsg = "【緑（野菜）が 不足ぎみ…】\nごはんやお肉は食べたけど、野菜が少なかったのでゴールドがあまり増えませんでした。野菜は「体の調子をととのえる」大切な役割があるよ！";
+    } else if (totalYellow < totalRed && totalYellow < totalGreen) {
+      resultAvatar = "🥱";
+      resultMsg = "【黄（ごはん・パン）が 不足ぎみ…】\nごはんやパンがすくなかったので、力が出にくくなっちゃうかも！黄色の栄養は「動くためのエネルギー」になるよ！";
+    } else if (totalRed < totalYellow && totalRed < totalGreen) {
+      resultAvatar = "🦴";
+      resultMsg = "【赤（魚・肉・たまご）が 不足ぎみ…】\n赤色の栄養がすくなかったよ！赤の栄養は「筋肉や血、骨をつくる」体のもとになるんだよ！";
+    } else {
+      resultAvatar = "😅";
+      resultMsg = "【栄養の偏りに注意！】\n残したものが多くて、ゴールドがあまりたまりませんでした。3つの栄養をバランスよく食べることで、体は大きくなるよ！";
+    }
+
+    document.getElementById('modal-avatar').innerText = resultAvatar;
+    document.getElementById('modal-bubble').innerText = resultMsg;
+    
+    // 縦型メーターを複製して結果画面にセット
+    const metersClone = document.getElementById('meters-box').cloneNode(true);
+    const cloneContainer = document.getElementById('modal-meters-clone');
+    cloneContainer.innerHTML = '';
+    cloneContainer.appendChild(metersClone);
+
+    document.getElementById('final-modal').style.display = 'flex';
+  }
+
+  function resetGame() {
+    playSound('reset');
+    initGame();
+  }
+
+  // ゲーム開始
+  window.onload = initGame;
 </script>
 
 </body>
