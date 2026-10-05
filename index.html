@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>きゅうしょくバランスゲーム</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    body { background-color: #f0f8ff; margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .container { max-width: 850px; width: 100%; background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
+    h1 { text-align: center; color: #333; font-size: 1.5rem; margin-top: 0; }
+    .status-header { text-align: center; font-weight: bold; color: #555; margin-bottom: 15px; background: #eccc68; padding: 8px; border-radius: 8px; font-size: 1.1rem; }
+    .main-layout { display: flex; flex-wrap: wrap; gap: 20px; }
+    
+    /* 左側：給食・選択エリア */
+    .left-panel { flex: 1.2; min-width: 300px; }
+    .dishes-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+    .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .dish-title { font-size: 1rem; font-weight: bold; color: #2d3436; }
+    .radio-group { display: flex; justify-content: space-between; gap: 6px; }
+    .radio-label { flex: 1; text-align: center; background: white; border: 2px solid #ddd; padding: 8px 4px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+    .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
+    .radio-group input[type="radio"] { display: none; }
+    .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; }
+    
+    /* 右側：横型メーター＆キャラクター */
+    .right-panel { flex: 1; min-width: 280px; background: #fafafa; padding: 15px; border-radius: 12px; border: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
+    .meter-container { width: 100%; margin-bottom: 15px; }
+    .meter-label { font-size: 0.85rem; font-weight: bold; margin-bottom: 3px; display: flex; justify-content: space-between; }
+    
+    /* 横型メーター領域 */
+    .meter-bar-outer { position: relative; height: 22px; width: 100%; background: #e0e0e0; border-radius: 11px; margin-bottom: 12px; overflow: visible; }
+    .meter-fill { height: 100%; width: 0%; transition: width 0.4s ease-in-out; border-radius: 11px; }
+    
+    /* 色分け */
+    .fill-yellow { background: #fdcb6e; }
+    .fill-red { background: #ff7675; }
+    .fill-green { background: #55efc4; }
+
+    /* 満タンライン（83.33% の位置） */
+    .border-line-100 { position: absolute; left: 83.33%; top: 0; height: 100%; border-left: 2px dashed #d63031; z-index: 2; pointer-events: none; }
+    .border-label { position: absolute; left: 83.33%; top: -14px; transform: translateX(-50%); font-size: 0.65rem; color: #d63031; font-weight: bold; background: rgba(255,255,255,0.9); padding: 0 4px; border-radius: 3px; white-space: nowrap; }
+
+    /* キャラクター表示部 */
+    .char-box { text-align: center; width: 100%; }
+    .char-avatar { font-size: 4rem; margin: 2px 0; transition: transform 0.3s; }
+    .speech-bubble { background: #74b9ff; color: white; padding: 10px; border-radius: 12px; font-weight: bold; position: relative; min-height: 70px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; text-align: center; }
+    
+    .btn-submit { width: 100%; padding: 12px; background: #00b894; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    .btn-submit:hover { background: #00876c; }
+    .btn-reset { margin-top: 10px; padding: 6px 12px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+
+    /* 🌟 全画面ひょうか画面（モーダル） */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-content { background: white; padding: 25px; border-radius: 20px; max-width: 600px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-top: 0; margin-bottom: 10px; }
+    .modal-avatar { font-size: 5.5rem; margin: 10px 0; }
+    .modal-bubble { background: #74b9ff; color: white; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; line-height: 1.4; }
+    .modal-btn { padding: 12px 24px; background: #0984e3; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+    .modal-btn:hover { background: #076bba; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>きゅうしょくバランスゲーム</h1>
+  <div id="meal-stage" class="status-header">1日目：月ようび</div>
+  
+  <div class="main-layout">
+    <!-- 左側：お皿ごとの選択肢 -->
+    <div class="left-panel">
+      <p style="font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 12px;">
+        きょうのきゅうしょくの たべかたを えらぼう！
+      </p>
+
+      <div id="dishes-container" class="dishes-container"></div>
+
+      <button id="submit-btn" class="btn-submit" onclick="submitMeal()">けってい！ ➔</button>
+    </div>
+
+    <!-- 右側：横型メーター＆キャラクター -->
+    <div class="right-panel">
+      <div id="meter-box" class="meter-container">
+        <!-- 1. 黄色メーター -->
+        <div class="meter-label" style="color:#e17055;">
+          <span>黄（エネルギーのもと）</span>
+        </div>
+        <div class="meter-bar-outer">
+          <div class="border-line-100"></div>
+          <div class="border-label">まんたん</div>
+          <div id="meter-yellow" class="meter-fill fill-yellow"></div>
+        </div>
+
+        <!-- 2. 赤色メーター -->
+        <div class="meter-label" style="color:#d63031;">
+          <span>赤（からだをつくる）</span>
+        </div>
+        <div class="meter-bar-outer">
+          <div class="border-line-100"></div>
+          <div class="border-label">まんたん</div>
+          <div id="meter-red" class="meter-fill fill-red"></div>
+        </div>
+
+        <!-- 3. 緑色メーター -->
+        <div class="meter-label" style="color:#00b894;">
+          <span>緑（ちょうしを ととのえる）</span>
+        </div>
+        <div class="meter-bar-outer">
+          <div class="border-line-100"></div>
+          <div class="border-label">まんたん</div>
+          <div id="meter-green" class="meter-fill fill-green"></div>
+        </div>
+      </div>
+
+      <div class="char-box">
+        <div id="char-avatar" class="char-avatar">🧍</div>
+        <div id="speech-bubble" class="speech-bubble">
+          お皿ごとに たべかたを えらんでね！
+        </div>
+      </div>
+
+      <button class="btn-reset" onclick="resetGame()">あたらしく やりなおす</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🌟 5日分かんりょう時の ぜんめん ひょうか画面 -->
+<div id="final-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-title">🎉 5日かんの ぜんぶのけっか 🎉</div>
+    <div id="modal-avatar" class="modal-avatar">👑</div>
+    <div id="modal-bubble" class="modal-bubble">コメントがここに入ります</div>
+    
+    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left;">【さいごの えいようメーター】</div>
+    <div id="modal-meters-clone"></div>
+
+    <button class="modal-btn" onclick="resetGame()">もう一度 チャレンジする</button>
+  </div>
+</div>
+
+<script>
+  // Web Audio API による効果音生成
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  function playSound(type) {
+    initAudio();
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } else if (type === 'submit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.08); 
+      osc.frequency.setValueAtTime(783.99, now + 0.16); 
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } else if (type === 'finish') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.12); 
+      osc.frequency.setValueAtTime(783.99, now + 0.24); 
+      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+      osc.start(now);
+      osc.stop(now + 0.7);
+    } else if (type === 'reset') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+  }
+
+  const schedule = [
+    {
+      day: "1日目：月ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow" },
+        { name: "🐟 さばのみそに", color: "red" },
+        { name: "🥬 いそかあえ", color: "green" }
+      ]
+    },
+    {
+      day: "2日目：火ようび",
+      dishes: [
+        { name: "🍞 パン", color: "yellow" },
+        { name: "🍳 オムレツ", color: "red" },
+        { name: "🥗 サラダ", color: "green" }
+      ]
+    },
+    {
+      day: "3日目：水ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow" },
+        { name: "🍳 たまごやき", color: "red" },
+        { name: "🥔 肉じゃが", color: "green" }
+      ]
+    },
+    {
+      day: "4日目：木ようび",
+      dishes: [
+        { name: "🍙 わかめごはん", color: "yellow" },
+        { name: "🍗 からあげ", color: "red" },
+        { name: "🥢 ナムル", color: "green" }
+      ]
+    },
+    {
+      day: "5日目：金ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow" },
+        { name: "🐟 ししゃもフライ", color: "red" },
+        { name: "🥬 ごまあえ", color: "green" }
+      ]
+    }
+  ];
+
+  let currentDay = 0;
+  let totalRed = 0;
+  let totalYellow = 0;
+  let totalGreen = 0;
+
+  function initGame() {
+    currentDay = 0;
+    totalRed = 0;
+    totalYellow = 0;
+    totalGreen = 0;
+    document.getElementById('final-modal').style.display = 'none';
+    updateMetersAndAvatar();
+    loadDay(currentDay);
+  }
+
+  function loadDay(dayIndex) {
+    const dayData = schedule[dayIndex];
+    document.getElementById('meal-stage').innerText = dayData.day;
+    
+    const container = document.getElementById('dishes-container');
+    container.innerHTML = '';
+
+    dayData.dishes.forEach((dish, idx) => {
+      const card = document.createElement('div');
+      card.className = 'dish-card';
+      card.innerHTML = `
+        <div class="dish-title">${dish.name}</div>
+        <div class="radio-group">
+          <input type="radio" id="dish_${idx}_less" name="dish_${idx}" value="10" onchange="playSound('click')">
+          <label for="dish_${idx}_less" class="radio-label">へらす・のこす</label>
+
+          <input type="radio" id="dish_${idx}_normal" name="dish_${idx}" value="20" checked onchange="playSound('click')">
+          <label for="dish_${idx}_normal" class="radio-label">ぜんぶ たべる</label>
+
+          <input type="radio" id="dish_${idx}_more" name="dish_${idx}" value="30" onchange="playSound('click')">
+          <label for="dish_${idx}_more" class="radio-label">おかわり</label>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = (dayIndex < 4) ? "けってい！ つぎの日へ ➔" : "けってい！ けっかを 見る ➔";
+    document.getElementById('speech-bubble').innerText = "お皿ごとに たべかたを えらんで「けってい！」を おしてね！";
+  }
+
+  function submitMeal() {
+    const dayData = schedule[currentDay];
+
+    dayData.dishes.forEach((dish, idx) => {
+      const selectedValue = parseInt(document.querySelector(`input[name="dish_${idx}"]:checked`).value);
+      if (dish.color === 'red') totalRed += selectedValue;
+      if (dish.color === 'yellow') totalYellow += selectedValue;
+      if (dish.color === 'green') totalGreen += selectedValue;
+    });
+
+    updateMetersAndAvatar();
+
+    if (currentDay < 4) {
+      playSound('submit');
+      currentDay++;
+      loadDay(currentDay);
+    } else {
+      playSound('finish');
+      showFinalResult();
+    }
+  }
+
+  function updateMetersAndAvatar() {
+    const maxBarPt = 120;
+    const yellowPct = Math.round((totalYellow / maxBarPt) * 100);
+    const redPct = Math.round((totalRed / maxBarPt) * 100);
+    const greenPct = Math.round((totalGreen / maxBarPt) * 100);
+
+    document.getElementById('meter-yellow').style.width = yellowPct + '%';
+    document.getElementById('meter-red').style.width = redPct + '%';
+    document.getElementById('meter-green').style.width = greenPct + '%';
+
+    const avatar = document.getElementById('char-avatar');
+
+    if (totalYellow >= 120) {
+      avatar.innerText = "🫃"; 
+    } else if (totalYellow < 40 && totalRed < 40 && totalGreen < 40 && currentDay >= 2) {
+      avatar.innerText = "💀"; 
+    } else if (totalYellow < 40 && totalGreen >= 60) {
+      avatar.innerText = "😫"; 
+    } else if (totalGreen >= 60 && totalRed >= 60 && totalYellow >= 60) {
+      avatar.innerText = "😃"; 
+    } else {
+      avatar.innerText = "🧍"; 
+    }
+  }
+
+  // 5日間の けっか・コメント表示
+  function showFinalResult() {
+    let resultAvatar = "😃";
+    let resultMsg = "";
+
+    const isPerfect = totalRed === 100 && totalYellow === 100 && totalGreen === 100;
+
+    if (isPerfect) {
+      resultAvatar = "👑";
+      resultMsg = "【パーフェクト！】まいにち のこさず ぜんぶ たべたね！すべての メーターが ピッタリ まんたん！";
+    } else if (totalRed >= 100 && totalYellow >= 100 && totalGreen >= 100) {
+      resultAvatar = "🦸‍♂️";
+      resultMsg = "【スーパー けんこうボディ！】おかわりも して まんたんラインを こえたよ！パワフルに すごせるね！";
+    } else if (totalYellow >= 120) {
+      resultAvatar = "🫃";
+      resultMsg = "【黄色メーター オーバー！】ごはんや パンの おかわりが おおくて おねかが ポッコリ！おかずも たべよう！";
+    } else if (totalRed >= 120) {
+      resultAvatar = "🥩";
+      resultMsg = "【赤メーター オーバー！】お肉や お魚の おかわりが おおいよ！やさい（緑）も バランスよく たべよう！";
+    } else if (totalGreen >= 100 && totalYellow < 80) {
+      resultAvatar = "😫";
+      resultMsg = "【パワーぶそく…】やさいは バッチリ たべたけど、ごはんを のこしぎみで ちからが でない…つかれた〜";
+    } else if (totalGreen < 60) {
+      resultAvatar = "🥀";
+      resultMsg = "【緑（やさい）ぶそく！】やさいを のこすことが おおかったみたい…からだの ちょうしが 上がらないよ〜！";
+    } else if (totalRed < 60 || totalYellow < 60 || totalGreen < 60) {
+      resultAvatar = "💀";
+      resultMsg = "【へらしすぎ・のこしすぎ…】ぜんたい的に えいようが たりてないよ〜！たおれちゃいそう…！";
+    } else {
+      resultAvatar = "😃";
+      resultMsg = "【おしい！あと少し！】のこさず たべる くふうをして、つぎは ぜんぶ まんたんを めざそう！";
+    }
+
+    // モーダルへセット
+    document.getElementById('modal-avatar').innerText = resultAvatar;
+    document.getElementById('modal-bubble').innerText = resultMsg;
+    
+    // メーターをコピーしてセット
+    const meterClone = document.getElementById('meter-box').cloneNode(true);
+    const cloneContainer = document.getElementById('modal-meters-clone');
+    cloneContainer.innerHTML = '';
+    cloneContainer.appendChild(meterClone);
+
+    // ひょうか画面（モーダル）をひらく
+    document.getElementById('final-modal').style.display = 'flex';
+  }
+
+  function resetGame() {
+    playSound('reset');
+    initGame();
+  }
+
+  window.onload = initGame;
+</script>
+
+</body>
+</html>
