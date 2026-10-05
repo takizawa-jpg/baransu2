@@ -3,369 +3,462 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>せいちょうゴールドメーター UI</title>
+  <title>えらんで給食バランスゲーム</title>
   <style>
-    :root {
-      --bg-color: #f4f6f9;
-      --card-bg: #ffffff;
-      --text-color: #333333;
-      --red-color: #ff5252;
-      --blue-color: #448aff;
-      --green-color: #69f0ae;
-      --gold-color: #ffd700;
-      --gold-gradient: linear-gradient(180deg, #ffe57f 0%, #ffd700 50%, #ffab00 100%);
-    }
+    * { box-sizing: border-box; font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif; }
+    body { background-color: #eef9ff; margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { max-width: 950px; width: 100%; background: #ffffff; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: 4px solid #74b9ff; }
+    
+    h1 { text-align: center; color: #2d3436; font-size: 1.6rem; margin: 0 0 10px 0; letter-spacing: 1px; }
+    .status-header { text-align: center; font-weight: bold; color: #d63031; margin-bottom: 15px; background: #ffeaa7; padding: 10px; border-radius: 12px; font-size: 1.2rem; border: 2px dashed #fdcb6e; }
+    
+    .main-layout { display: flex; flex-wrap: wrap; gap: 15px; }
+    
+    /* 左側：給食・選択エリア */
+    .left-panel { flex: 1.1; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between; }
+    .guide-title { font-weight: bold; text-align: center; margin: 0 0 10px 0; color: #0984e3; font-size: 1.05rem; background: #e3f2fd; padding: 8px; border-radius: 8px; }
+    
+    .dishes-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 10px 12px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .dish-title { font-size: 1.05rem; font-weight: bold; color: #2d3436; display: flex; align-items: center; justify-content: space-between; }
+    .dish-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; }
+    .tag-yellow { background: #e17055; }
+    .tag-red { background: #d63031; }
+    .tag-green { background: #00b894; }
 
-    body {
-      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+    .radio-group { display: flex; justify-content: space-between; gap: 6px; }
+    .radio-group input[type="radio"] { display: none; }
+    .radio-label { flex: 1; text-align: center; background: white; border: 2px solid #ccc; padding: 8px 2px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #555; }
+    .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
+    .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; box-shadow: 0 3px 0 #0984e3; transform: translateY(-2px); }
 
-    .container {
-      background: var(--card-bg);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      max-width: 500px;
-      width: 100%;
-    }
+    /* 右側：縦型メーター群＆キャラクター */
+    .right-panel { flex: 1.3; min-width: 330px; background: #fafafa; padding: 12px; border-radius: 16px; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
 
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 1.4rem;
-    }
+    /* 4つの縦型メーターエリア（黄・赤・緑 ＋ ゴールド） */
+    .vertical-meters-container { display: flex; justify-content: space-around; width: 100%; height: 200px; background: #fff; border: 2px solid #e0e0e0; padding: 15px 5px 8px 5px; border-radius: 12px; margin-bottom: 10px; position: relative; }
+    .v-meter-group { display: flex; flex-direction: column; align-items: center; height: 100%; width: 22%; position: relative; }
+    
+    .v-meter-track { position: relative; width: 34px; flex: 1; background: #f0f0f0; border-radius: 18px; border: 2px solid #ccc; overflow: hidden; display: flex; flex-direction: column-reverse; }
+    .v-meter-fill { width: 100%; height: 0%; transition: height 0.5s ease-out; border-radius: 0 0 16px 16px; }
+    
+    .fill-yellow { background: linear-gradient(0deg, #f1c40f, #fed330); }
+    .fill-red { background: linear-gradient(0deg, #e74c3c, #ff7675); }
+    .fill-green { background: linear-gradient(0deg, #2ecc71, #55efc4); }
+    .fill-gold { background: linear-gradient(0deg, #f1c40f, #f39c12, #ffeb3b); }
 
-    /* メインレイアウト: 3色メーター(左) + 縦型ゴールドメーター(右) */
-    .dashboard-layout {
-      display: flex;
-      gap: 20px;
-      align-items: stretch;
-      margin-bottom: 24px;
-    }
+    .gold-track-border { border: 2px solid #f1c40f; background: #fffdf0; }
 
-    /* 3色メーター（横方向） */
-    .horizontal-meters {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      gap: 16px;
-    }
+    .v-meter-label { font-size: 0.72rem; font-weight: bold; margin-top: 4px; text-align: center; line-height: 1.1; }
+    .v-meter-val { font-size: 0.8rem; font-weight: bold; color: #333; margin-top: 2px; }
+    
+    /* 仕切り線 */
+    .meter-divider { width: 2px; background: #ffeaa7; height: 90%; margin: 0 2px; }
 
-    .meter-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    /* ボトルネック（最低値）強調マーカー */
+    .limit-marker { position: absolute; top: -14px; background: #e74c3c; color: white; font-size: 0.55rem; padding: 1px 3px; border-radius: 4px; font-weight: bold; display: none; animation: pulse 1s infinite alternate; white-space: nowrap; }
+    @keyframes pulse { 0% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1.05); } }
 
-    .meter-label {
-      font-size: 0.9rem;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-    }
+    /* アドバイスメッセージ */
+    .gold-hint { font-size: 0.75rem; color: #d35400; margin-bottom: 8px; font-weight: bold; line-height: 1.2; text-align: center; background: #fff8e7; padding: 6px; border-radius: 8px; width: 100%; border: 1px solid #ffeaa7; }
 
-    .progress-bar-bg {
-      background-color: #e0e0e0;
-      height: 16px;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-    }
+    /* キャラクターエリア */
+    .char-box { text-align: center; width: 100%; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; border-radius: 10px; border: 1px solid #e0e0e0; }
+    .char-avatar { font-size: 2.8rem; transition: transform 0.3s; line-height: 1; }
+    .speech-bubble { flex: 1; background: #74b9ff; color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 0.82rem; text-align: left; line-height: 1.3; min-height: 48px; display: flex; align-items: center; }
 
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 8px;
-      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    .btn-submit { width: 100%; padding: 14px; background: #2ecc71; color: white; border: none; border-radius: 10px; font-size: 1.15rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #27ae60; transition: all 0.1s; }
+    .btn-submit:active { transform: translateY(3px); box-shadow: 0 1px 0 #27ae60; }
+    .btn-reset { margin-top: 8px; padding: 5px 10px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
 
-    .fill-red { background-color: var(--red-color); }
-    .fill-blue { background-color: var(--blue-color); }
-    .fill-green { background-color: var(--green-color); }
-
-    /* 縦型 せいちょうゴールドメーター */
-    .gold-meter-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #fffdf0;
-      padding: 12px;
-      border-radius: 12px;
-      border: 2px solid #ffe082;
-      width: 90px;
-      box-sizing: border-box;
-    }
-
-    .gold-meter-title {
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: #b78103;
-      text-align: center;
-      margin-bottom: 10px;
-      line-height: 1.2;
-    }
-
-    .gold-meter-track {
-      width: 24px;
-      flex: 1;
-      min-height: 140px;
-      background-color: #e0e0e0;
-      border-radius: 12px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
-
-    .gold-meter-fill {
-      width: 100%;
-      height: 0%;
-      background: var(--gold-gradient);
-      border-radius: 12px;
-      transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .gold-meter-value {
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #b78103;
-      margin-top: 8px;
-    }
-
-    /* 最終結果エリア */
-    .final-result-card {
-      background: #fafafa;
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid #eee;
-    }
-
-    .final-result-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin-bottom: 12px;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 4px;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .result-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-      font-size: 0.85rem;
-    }
-
-    .result-item.gold-highlight {
-      grid-column: span 2;
-      background: #fff8e1;
-      border: 1px solid #ffe082;
-      font-weight: bold;
-    }
-
-    .badge {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
-
-    .badge-red { background-color: var(--red-color); }
-    .badge-blue { background-color: var(--blue-color); }
-    .badge-green { background-color: var(--green-color); }
-    .badge-gold { background-color: var(--gold-color); }
-
-    /* 操作用スライダー */
-    .controls {
-      margin-top: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding-top: 16px;
-      border-top: 1px dashed #ccc;
-    }
-
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.85rem;
-    }
-
-    .control-group input {
-      flex: 1;
-    }
+    /* 全画面評価画面（モーダル） */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+    .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 550px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 1.4rem; font-weight: bold; color: #2d3436; margin: 0 0 10px 0; }
+    .modal-avatar { font-size: 4.5rem; margin: 5px 0; }
+    .modal-bubble { background: #74b9ff; color: white; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: bold; margin-bottom: 15px; line-height: 1.4; text-align: left; }
+    .modal-btn { padding: 12px 30px; background: #0984e3; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #076bba; }
+    .modal-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #076bba; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>せいちょうメーター</h2>
+<div class="container">
+  <h1>🍱 えらんで給食バランスゲーム</h1>
+  <div id="meal-stage" class="status-header">1日目：月ようび</div>
+  
+  <div class="main-layout">
+    <!-- 左側：給食の選択 -->
+    <div class="left-panel">
+      <div class="guide-title">きょうの 給食の たべかたを えらぼう！</div>
+      <div id="dishes-container" class="dishes-container"></div>
+      <button id="submit-btn" class="btn-submit" onclick="submitMeal()">決定！ つぎの日へ ➔</button>
+    </div>
 
-    <!-- メイン表示領域（3色メーター ＋ 縦型せいちょうゴールドメーター） -->
-    <div class="dashboard-layout">
+    <!-- 右側：縦型4連メーター ＋ メッセージ ＋ キャラ -->
+    <div class="right-panel">
       
-      <!-- 左：3色メーター -->
-      <div class="horizontal-meters">
-        <div class="meter-group">
-          <div class="meter-label">
-            <span>🔴 あかメーター</span>
-            <span id="red-val-text">75%</span>
+      <!-- メッセージ表示エリア -->
+      <div id="gold-hint" class="gold-hint">3つの栄養がバランスよくたまると、せいちょうゴールドメーターが伸びるよ！</div>
+
+      <!-- 縦型メーターエリア（黄・赤・緑 ＋ せいちょうゴールドメーター） -->
+      <div class="vertical-meters-container" id="meters-box">
+        <!-- 黄色 -->
+        <div class="v-meter-group">
+          <div id="marker-yellow" class="limit-marker">⚠️ここが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-yellow" class="v-meter-fill fill-yellow"></div>
           </div>
-          <div class="progress-bar-bg">
-            <div id="red-bar" class="progress-bar-fill fill-red"></div>
-          </div>
+          <div class="v-meter-label" style="color:#d35400;">黄<br>(ねつ)</div>
+          <div id="val-yellow" class="v-meter-val">0</div>
         </div>
 
-        <div class="meter-group">
-          <div class="meter-label">
-            <span>🔵 あおメーター</span>
-            <span id="blue-val-text">60%</span>
+        <!-- 赤色 -->
+        <div class="v-meter-group">
+          <div id="marker-red" class="limit-marker">⚠️ここが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-red" class="v-meter-fill fill-red"></div>
           </div>
-          <div class="progress-bar-bg">
-            <div id="blue-bar" class="progress-bar-fill fill-blue"></div>
-          </div>
+          <div class="v-meter-label" style="color:#c0392b;">赤<br>(からだ)</div>
+          <div id="val-red" class="v-meter-val">0</div>
         </div>
 
-        <div class="meter-group">
-          <div class="meter-label">
-            <span>🟢 みどりメーター</span>
-            <span id="green-val-text">80%</span>
+        <!-- 緑色 -->
+        <div class="v-meter-group">
+          <div id="marker-green" class="limit-marker">⚠️ここが限界</div>
+          <div class="v-meter-track">
+            <div id="meter-green" class="v-meter-fill fill-green"></div>
           </div>
-          <div class="progress-bar-bg">
-            <div id="green-bar" class="progress-bar-fill fill-green"></div>
+          <div class="v-meter-label" style="color:#27ae60;">緑<br>(ちょうし)</div>
+          <div id="val-green" class="v-meter-val">0</div>
+        </div>
+
+        <div class="meter-divider"></div>
+
+        <!-- 横に並んだ 縦型せいちょうゴールドメーター -->
+        <div class="v-meter-group">
+          <div class="v-meter-track gold-track-border">
+            <div id="meter-gold" class="v-meter-fill fill-gold"></div>
           </div>
+          <div class="v-meter-label" style="color:#d35400;">✨せいちょう<br>ゴールド</div>
+          <div id="val-gold" class="v-meter-val">0</div>
         </div>
       </div>
 
-      <!-- 右：縦型 せいちょうゴールドメーター -->
-      <div class="gold-meter-container">
-        <div class="gold-meter-title">せいちょう<br>ゴールド<br>メーター</div>
-        <div class="gold-meter-track">
-          <div id="gold-bar" class="gold-meter-fill"></div>
+      <!-- キャラクター表示部 -->
+      <div class="char-box">
+        <div id="char-avatar" class="char-avatar">🧍</div>
+        <div id="speech-bubble" class="speech-bubble">
+          メニューごとに「ひとくち・はんぶん・ぜんぶ」をえらんでね！
         </div>
-        <div id="gold-val-text" class="gold-meter-value">72%</div>
       </div>
 
-    </div>
-
-    <!-- 最終結果表示エリア -->
-    <div class="final-result-card">
-      <div class="final-result-title">最終結果</div>
-      <div class="results-grid">
-        <div class="result-item">
-          <span><span class="badge badge-red"></span>あか</span>
-          <span id="res-red">75%</span>
-        </div>
-        <div class="result-item">
-          <span><span class="badge badge-blue"></span>あお</span>
-          <span id="res-blue">60%</span>
-        </div>
-        <div class="result-item">
-          <span><span class="badge badge-green"></span>みどり</span>
-          <span id="res-green">80%</span>
-        </div>
-        <!-- 最終結果のせいちょうゴールドメーター -->
-        <div class="result-item gold-highlight">
-          <span><span class="badge badge-gold"></span>せいちょうゴールドメーター</span>
-          <span id="res-gold">72%</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- デモ用調整コントロール -->
-    <div class="controls">
-      <div class="control-group">
-        <label style="width: 70px;">あか:</label>
-        <input type="range" id="input-red" min="0" max="100" value="75">
-      </div>
-      <div class="control-group">
-        <label style="width: 70px;">あお:</label>
-        <input type="range" id="input-blue" min="0" max="100" value="60">
-      </div>
-      <div class="control-group">
-        <label style="width: 70px;">みどり:</label>
-        <input type="range" id="input-green" min="0" max="100" value="80">
-      </div>
+      <button class="btn-reset" onclick="resetGame()">はじめから やりなおす</button>
     </div>
   </div>
+</div>
 
-  <script>
-    // 要素参照
-    const inputRed = document.getElementById('input-red');
-    const inputBlue = document.getElementById('input-blue');
-    const inputGreen = document.getElementById('input-green');
+<!-- 5日分完了時の 全画面評価画面 -->
+<div id="final-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-title">🎉 5日間の けっか はっぴょう 🎉</div>
+    <div id="modal-avatar" class="modal-avatar">👑</div>
+    <div id="modal-bubble" class="modal-bubble">コメントが入ります</div>
+    
+    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left; font-size: 0.9rem;">【さいごの 栄養メーター】</div>
+    <div id="modal-meters-clone" style="margin-bottom: 15px;"></div>
 
-    const redBar = document.getElementById('red-bar');
-    const blueBar = document.getElementById('blue-bar');
-    const greenBar = document.getElementById('green-bar');
-    const goldBar = document.getElementById('gold-bar');
+    <button class="modal-btn" onclick="resetGame()">もういちど チャレンジ！</button>
+  </div>
+</div>
 
-    const redValText = document.getElementById('red-val-text');
-    const blueValText = document.getElementById('blue-val-text');
-    const greenValText = document.getElementById('green-val-text');
-    const goldValText = document.getElementById('gold-val-text');
+<script>
+  let audioCtx = null;
 
-    const resRed = document.getElementById('res-red');
-    const resBlue = document.getElementById('res-blue');
-    const resGreen = document.getElementById('res-green');
-    const resGold = document.getElementById('res-gold');
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
 
-    function updateMeters() {
-      const red = parseInt(inputRed.value);
-      const blue = parseInt(inputBlue.value);
-      const green = parseInt(inputGreen.value);
+  function playSound(type) {
+    initAudio();
+    if (!audioCtx) return;
 
-      // 3色メーターの平均値をゴールドメーターの値として計算
-      const gold = Math.round((red + blue + green) / 3);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
 
-      // バーの長さを更新
-      redBar.style.width = `${red}%`;
-      blueBar.style.width = `${blue}%`;
-      greenBar.style.width = `${green}%`;
-      goldBar.style.height = `${gold}%`;
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'submit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.08); 
+      osc.frequency.setValueAtTime(783.99, now + 0.16); 
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (type === 'finish') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.12); 
+      osc.frequency.setValueAtTime(783.99, now + 0.24); 
+      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    } else if (type === 'reset') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    }
+  }
 
-      // テキスト表示を更新
-      redValText.textContent = `${red}%`;
-      blueValText.textContent = `${blue}%`;
-      greenValText.textContent = `${green}%`;
-      goldValText.textContent = `${gold}%`;
+  // 給食データ
+  const schedule = [
+    {
+      day: "1日目：月ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🐟 さばのみそ煮", color: "red", tag: "赤：体をつくる" },
+        { name: "🥬 いそかあえ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "2日目：火ようび",
+      dishes: [
+        { name: "🍞 コッペパン", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍳 オムレツ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥗 サラダ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "3日目：水ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍳 たまごやき", color: "red", tag: "赤：体をつくる" },
+        { name: "🥔 肉じゃが", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "4日目：木ようび",
+      dishes: [
+        { name: "🍙 わかめごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🍗 とりのからあげ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥢 ナムル", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "5日目：金ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
+        { name: "🐟 ししゃもフライ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥬 ごまあえ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    }
+  ];
 
-      // 最終結果欄を更新
-      resRed.textContent = `${red}%`;
-      resBlue.textContent = `${blue}%`;
-      resGreen.textContent = `${green}%`;
-      resGold.textContent = `${gold}%`;
+  let currentDay = 0;
+  let totalYellow = 0;
+  let totalRed = 0;
+  let totalGreen = 0;
+
+  function initGame() {
+    currentDay = 0;
+    totalYellow = 0;
+    totalRed = 0;
+    totalGreen = 0;
+    document.getElementById('final-modal').style.display = 'none';
+    updateMetersAndAvatar();
+    loadDay(currentDay);
+  }
+
+  function loadDay(dayIndex) {
+    const dayData = schedule[dayIndex];
+    document.getElementById('meal-stage').innerText = dayData.day;
+    
+    const container = document.getElementById('dishes-container');
+    container.innerHTML = '';
+
+    dayData.dishes.forEach((dish, idx) => {
+      const card = document.createElement('div');
+      card.className = 'dish-card';
+      
+      let tagClass = 'tag-yellow';
+      if (dish.color === 'red') tagClass = 'tag-red';
+      if (dish.color === 'green') tagClass = 'tag-green';
+
+      card.innerHTML = `
+        <div class="dish-title">
+          <span>${dish.name}</span>
+          <span class="dish-tag ${tagClass}">${dish.tag}</span>
+        </div>
+        <div class="radio-group">
+          <input type="radio" id="dish_${idx}_1" name="dish_${idx}" value="5" onchange="playSound('click')">
+          <label for="dish_${idx}_1" class="radio-label">ひとくち</label>
+
+          <input type="radio" id="dish_${idx}_2" name="dish_${idx}" value="10" onchange="playSound('click')">
+          <label for="dish_${idx}_2" class="radio-label">はんぶん</label>
+
+          <input type="radio" id="dish_${idx}_3" name="dish_${idx}" value="20" checked onchange="playSound('click')">
+          <label for="dish_${idx}_3" class="radio-label">ぜんぶたべる</label>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = (dayIndex < 4) ? "決定！ つぎの日へ ➔" : "決定！ 結果を見る ➔";
+    document.getElementById('speech-bubble').innerText = "お皿ごとに 食べ方をえらんで「決定！」をおしてね！";
+  }
+
+  function submitMeal() {
+    const dayData = schedule[currentDay];
+
+    dayData.dishes.forEach((dish, idx) => {
+      const selectedValue = parseInt(document.querySelector(`input[name="dish_${idx}"]:checked`).value);
+      if (dish.color === 'yellow') totalYellow += selectedValue;
+      if (dish.color === 'red') totalRed += selectedValue;
+      if (dish.color === 'green') totalGreen += selectedValue;
+    });
+
+    updateMetersAndAvatar();
+
+    if (currentDay < 4) {
+      playSound('submit');
+      currentDay++;
+      loadDay(currentDay);
+    } else {
+      playSound('finish');
+      showFinalResult();
+    }
+  }
+
+  function updateMetersAndAvatar() {
+    const maxVal = 100;
+
+    const yellowPct = Math.min(100, Math.round((totalYellow / maxVal) * 100));
+    const redPct = Math.min(100, Math.round((totalRed / maxVal) * 100));
+    const greenPct = Math.min(100, Math.round((totalGreen / maxVal) * 100));
+
+    // 縦型メーター更新
+    document.getElementById('meter-yellow').style.height = yellowPct + '%';
+    document.getElementById('meter-red').style.height = redPct + '%';
+    document.getElementById('meter-green').style.height = greenPct + '%';
+
+    document.getElementById('val-yellow').innerText = totalYellow;
+    document.getElementById('val-red').innerText = totalRed;
+    document.getElementById('val-green').innerText = totalGreen;
+
+    // 🌟 せいちょうゴールドメーター計算（3色の最小値）
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    const goldPct = Math.min(100, Math.round((minVal / maxVal) * 100));
+
+    document.getElementById('meter-gold').style.height = goldPct + '%';
+    document.getElementById('val-gold').innerText = minVal;
+
+    // ボトルネックマーカーの更新
+    document.getElementById('marker-yellow').style.display = 'none';
+    document.getElementById('marker-red').style.display = 'none';
+    document.getElementById('marker-green').style.display = 'none';
+
+    const hintElem = document.getElementById('gold-hint');
+
+    if (currentDay > 0 || totalYellow > 0 || totalRed > 0 || totalGreen > 0) {
+      if (minVal === totalYellow && totalYellow < totalRed && totalYellow < totalGreen) {
+        document.getElementById('marker-yellow').style.display = 'block';
+        hintElem.innerText = "⚠️【黄 (ごはんなど)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (minVal === totalRed && totalRed < totalYellow && totalRed < totalGreen) {
+        document.getElementById('marker-red').style.display = 'block';
+        hintElem.innerText = "⚠️【赤 (魚・肉など)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (minVal === totalGreen && totalGreen < totalYellow && totalGreen < totalRed) {
+        document.getElementById('marker-green').style.display = 'block';
+        hintElem.innerText = "⚠️【緑 (野菜など)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (totalYellow === totalRed && totalRed === totalGreen) {
+        hintElem.innerText = "✨ すごい！3つの栄養がぴったりそろってゴールドメーターが順調！";
+      } else {
+        hintElem.innerText = "⚠️ 一番少ない栄養の高さに合わせてゴールドメーターが伸びるよ！";
+      }
     }
 
-    // イベントリスナー設定
-    inputRed.addEventListener('input', updateMeters);
-    inputBlue.addEventListener('input', updateMeters);
-    inputGreen.addEventListener('input', updateMeters);
+    // キャラクターのリアクション
+    const avatar = document.getElementById('char-avatar');
+    if (goldPct >= 100) {
+      avatar.innerText = "👑";
+    } else if (goldPct >= 70) {
+      avatar.innerText = "😃";
+    } else if (totalGreen <= 20 && currentDay >= 2) {
+      avatar.innerText = "😫";
+    } else if (totalYellow <= 20 && currentDay >= 2) {
+      avatar.innerText = "🥱";
+    } else {
+      avatar.innerText = "🧍";
+    }
+  }
 
-    // 初期表示の反映
-    updateMeters();
-  </script>
+  // 最終結果モーダルの表示（ゴールドメーターも一緒に表示）
+  function showFinalResult() {
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    let resultAvatar = "😃";
+    let resultMsg = "";
+
+    if (minVal >= 100) {
+      resultAvatar = "👑";
+      resultMsg = "【パーフェクト！ゴールドメーターまんたん！】\n毎日のこさず全部たべたね！「黄・赤・緑」の栄養がバッチリそろって、せいちょうパワーが全開です！";
+    } else if (minVal >= 70) {
+      resultAvatar = "🦸‍♂️";
+      resultMsg = "【せいちょうゴールドメーター かなり高め！】\nバランスよく食べることができたね！あと少しでパーフェクト！苦手なものも一口ずつ挑戦してみよう！";
+    } else if (totalGreen < totalYellow && totalGreen < totalRed) {
+      resultAvatar = "🥀";
+      resultMsg = "【緑（野菜）が 不足ぎみ…】\nごはんやお肉は食べたけど、野菜が少なかったのでゴールドメーターがあまり伸びませんでした。野菜は「体の調子をととのえる」大切な役割があるよ！";
+    } else if (totalYellow < totalRed && totalYellow < totalGreen) {
+      resultAvatar = "🥱";
+      resultMsg = "【黄（ごはん・パン）が 不足ぎみ…】\nごはんやパンがすくなかったので、力が出にくくなっちゃうかも！黄色の栄養は「動くためのエネルギー」になるよ！";
+    } else if (totalRed < totalYellow && totalRed < totalGreen) {
+      resultAvatar = "🦴";
+      resultMsg = "【赤（魚・肉・たまご）が 不足ぎみ…】\n赤色の栄養がすくなかったよ！赤の栄養は「筋肉や血、骨をつくる」体のもとになるんだよ！";
+    } else {
+      resultAvatar = "😅";
+      resultMsg = "【栄養の偏りに注意！】\n残したものが多くて、ゴールドメーターがあまりたまりませんでした。3つの栄養をバランスよく食べることで、体は大きくなるよ！";
+    }
+
+    document.getElementById('modal-avatar').innerText = resultAvatar;
+    document.getElementById('modal-bubble').innerText = resultMsg;
+    
+    // 縦型4連メーター（3色＋ゴールド）をそのまま複製して結果画面に表示
+    const metersClone = document.getElementById('meters-box').cloneNode(true);
+    
+    // マーカー類は結果画面では非表示にする
+    metersClone.querySelectorAll('.limit-marker').forEach(m => m.style.display = 'none');
+    
+    const cloneContainer = document.getElementById('modal-meters-clone');
+    cloneContainer.innerHTML = '';
+    cloneContainer.appendChild(metersClone);
+
+    document.getElementById('final-modal').style.display = 'flex';
+  }
+
+  function resetGame() {
+    playSound('reset');
+    initGame();
+  }
+
+  window.onload = initGame;
+</script>
+
 </body>
 </html>
