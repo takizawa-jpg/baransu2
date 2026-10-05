@@ -55,12 +55,12 @@
     /* 仕切り線 */
     .meter-divider { width: 2px; background: #ffeaa7; height: 90%; margin: 0 2px; }
 
-    /* ボトルネック（最低値）強調マーカー */
-    .limit-marker { position: absolute; top: -14px; background: #e74c3c; color: white; font-size: 0.55rem; padding: 1px 3px; border-radius: 4px; font-weight: bold; display: none; animation: pulse 1s infinite alternate; white-space: nowrap; }
+    /* 「だいじょうぶ？」強調マーカー */
+    .limit-marker { position: absolute; top: -14px; background: #e74c3c; color: white; font-size: 0.55rem; padding: 1px 4px; border-radius: 4px; font-weight: bold; display: none; animation: pulse 1s infinite alternate; white-space: nowrap; }
     @keyframes pulse { 0% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1.05); } }
 
     /* アドバイスメッセージ */
-    .gold-hint { font-size: 0.75rem; color: #d35400; margin-bottom: 8px; font-weight: bold; line-height: 1.2; text-align: center; background: #fff8e7; padding: 6px; border-radius: 8px; width: 100%; border: 1px solid #ffeaa7; }
+    .gold-hint { font-size: 0.75rem; color: #d35400; margin-bottom: 8px; font-weight: bold; line-height: 1.2; text-align: center; background: #fff8e7; padding: 6px; border-radius: 8px; width: 100%; border: 1px solid #ffeaa7; min-height: 38px; display: flex; align-items: center; justify-content: center; }
 
     /* キャラクターエリア */
     .char-box { text-align: center; width: 100%; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; border-radius: 10px; border: 1px solid #e0e0e0; }
@@ -69,6 +69,8 @@
 
     .btn-submit { width: 100%; padding: 14px; background: #2ecc71; color: white; border: none; border-radius: 10px; font-size: 1.15rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #27ae60; transition: all 0.1s; }
     .btn-submit:active { transform: translateY(3px); box-shadow: 0 1px 0 #27ae60; }
+    .btn-submit:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
+
     .btn-reset { margin-top: 8px; padding: 5px 10px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
 
     /* 全画面評価画面（モーダル） */
@@ -105,7 +107,7 @@
       <div class="vertical-meters-container" id="meters-box">
         <!-- 黄色 -->
         <div class="v-meter-group">
-          <div id="marker-yellow" class="limit-marker">⚠️ここが限界</div>
+          <div id="marker-yellow" class="limit-marker">⚠️だいじょうぶ？</div>
           <div class="v-meter-track">
             <div id="meter-yellow" class="v-meter-fill fill-yellow"></div>
           </div>
@@ -115,7 +117,7 @@
 
         <!-- 赤色 -->
         <div class="v-meter-group">
-          <div id="marker-red" class="limit-marker">⚠️ここが限界</div>
+          <div id="marker-red" class="limit-marker">⚠️️だいじょうぶ？</div>
           <div class="v-meter-track">
             <div id="meter-red" class="v-meter-fill fill-red"></div>
           </div>
@@ -125,7 +127,7 @@
 
         <!-- 緑色 -->
         <div class="v-meter-group">
-          <div id="marker-green" class="limit-marker">⚠️ここが限界</div>
+          <div id="marker-green" class="limit-marker">⚠️だいじょうぶ？</div>
           <div class="v-meter-track">
             <div id="meter-green" class="v-meter-fill fill-green"></div>
           </div>
@@ -207,6 +209,33 @@
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
       osc.start(now);
       osc.stop(now + 0.3);
+    } else if (type === 'coin') {
+      // 💰 チャリン（お金の音）効果音
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const coinGain = audioCtx.createGain();
+
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+
+      // 2つの高音を重ねてキーー can という輝きを作る
+      osc1.frequency.setValueAtTime(987.77, now); // B5
+      osc1.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+
+      osc2.frequency.setValueAtTime(1975.53, now); // B6
+      osc2.frequency.setValueAtTime(2637.02, now + 0.08); // E7
+
+      osc1.connect(coinGain);
+      osc2.connect(coinGain);
+      coinGain.connect(audioCtx.destination);
+
+      coinGain.gain.setValueAtTime(0.15, now);
+      coinGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.35);
+      osc2.stop(now + 0.35);
     } else if (type === 'finish') {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(523.25, now); 
@@ -283,7 +312,7 @@
     totalRed = 0;
     totalGreen = 0;
     document.getElementById('final-modal').style.display = 'none';
-    updateMetersAndAvatar();
+    updateMetersAndAvatar(false);
     loadDay(currentDay);
   }
 
@@ -323,10 +352,14 @@
 
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.innerText = (dayIndex < 4) ? "決定！ つぎの日へ ➔" : "決定！ 結果を見る ➔";
+    submitBtn.disabled = false;
     document.getElementById('speech-bubble').innerText = "お皿ごとに 食べ方をえらんで「決定！」をおしてね！";
   }
 
   function submitMeal() {
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true; // 連打防止
+
     const dayData = schedule[currentDay];
 
     dayData.dishes.forEach((dish, idx) => {
@@ -336,26 +369,37 @@
       if (dish.color === 'green') totalGreen += selectedValue;
     });
 
-    updateMetersAndAvatar();
+    playSound('submit');
 
-    if (currentDay < 4) {
-      playSound('submit');
-      currentDay++;
-      loadDay(currentDay);
-    } else {
-      playSound('finish');
-      showFinalResult();
-    }
+    // 1ステップ目：3色メーターのみをまず更新
+    updateMetersAndAvatar(true);
+
+    // 2ステップ目：0.5秒後にゴールドメーターを時差更新 ＋ 「チャリン」音
+    setTimeout(() => {
+      updateGoldMeter();
+
+      setTimeout(() => {
+        if (currentDay < 4) {
+          currentDay++;
+          loadDay(currentDay);
+        } else {
+          playSound('finish');
+          showFinalResult();
+        }
+      }, 600);
+
+    }, 550);
   }
 
-  function updateMetersAndAvatar() {
+  // Step 1: 3色メーターとアバター、警告マークの更新
+  function updateMetersAndAvatar(isAnimated = false) {
     const maxVal = 100;
 
     const yellowPct = Math.min(100, Math.round((totalYellow / maxVal) * 100));
     const redPct = Math.min(100, Math.round((totalRed / maxVal) * 100));
     const greenPct = Math.min(100, Math.round((totalGreen / maxVal) * 100));
 
-    // 縦型メーター更新
+    // 縦型3色メーターの高さ更新
     document.getElementById('meter-yellow').style.height = yellowPct + '%';
     document.getElementById('meter-red').style.height = redPct + '%';
     document.getElementById('meter-green').style.height = greenPct + '%';
@@ -364,18 +408,12 @@
     document.getElementById('val-red').innerText = totalRed;
     document.getElementById('val-green').innerText = totalGreen;
 
-    // 🌟 せいちょうゴールドメーター計算（3色の最小値）
-    const minVal = Math.min(totalYellow, totalRed, totalGreen);
-    const goldPct = Math.min(100, Math.round((minVal / maxVal) * 100));
-
-    document.getElementById('meter-gold').style.height = goldPct + '%';
-    document.getElementById('val-gold').innerText = minVal;
-
-    // ボトルネックマーカーの更新
+    // 「だいじょうぶ？」警告マーカーの更新
     document.getElementById('marker-yellow').style.display = 'none';
     document.getElementById('marker-red').style.display = 'none';
     document.getElementById('marker-green').style.display = 'none';
 
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
     const hintElem = document.getElementById('gold-hint');
 
     if (currentDay > 0 || totalYellow > 0 || totalRed > 0 || totalGreen > 0) {
@@ -393,6 +431,30 @@
       } else {
         hintElem.innerText = "⚠️ 一番少ない栄養の高さに合わせてゴールドメーターが伸びるよ！";
       }
+    }
+
+    if (!isAnimated) {
+      updateGoldMeter(false);
+    }
+  }
+
+  // Step 2: ゴールドメーターの時差更新＆チャリン音
+  function updateGoldMeter(playSoundEffect = true) {
+    const maxVal = 100;
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    const goldPct = Math.min(100, Math.round((minVal / maxVal) * 100));
+
+    const goldMeter = document.getElementById('meter-gold');
+    const goldVal = document.getElementById('val-gold');
+
+    // 直前の値から増えた場合のみ「チャリン」を鳴らす
+    const prevVal = parseInt(goldVal.innerText) || 0;
+    
+    goldMeter.style.height = goldPct + '%';
+    goldVal.innerText = minVal;
+
+    if (playSoundEffect && minVal > prevVal) {
+      playSound('coin');
     }
 
     // キャラクターのリアクション
@@ -439,7 +501,7 @@
     document.getElementById('modal-avatar').innerText = resultAvatar;
     document.getElementById('modal-bubble').innerText = resultMsg;
     
-    // 縦型4連メーター（3色＋ゴールド）をそのまま複製して結果画面に表示
+    // 縦型4連メーター（3色＋ゴールド）を複製して結果画面に表示
     const metersClone = document.getElementById('meters-box').cloneNode(true);
     
     // マーカー類は結果画面では非表示にする
