@@ -1,34 +1,88 @@
-<use_code_canvas>
-  <generate_web_app language="HTML">
-    <query>
-      Create a fully self-contained HTML/CSS/JS application for "えらんで給食バランスゲーム" (School Lunch Balance Game) optimized for 3rd graders on iPads/tablets and PC browsers.
-      
-      Requirements:
-      1. UI & Layout:
-         - Responsive layout for iPad tablets (both landscape and portrait) and PC.
-         - Flex/Grid setup ensuring the 4 choice buttons for each dish NEVER get squeezed out or hidden.
-         - Clear title, 5-day stage tracker (1日目：月ようび 〜 5日目：金ようび).
-         - Left panel: Dish cards for current day with dish name, nutrition tag (Yellow/Red/Green), and 4 radio/button choices ("ひとくちたべた" = 5pt, "はんぶんたべた" = 10pt, "ほとんどたべた" = 15pt, "ぜんぶたべた" = 20pt).
-         - Right panel: 4 vertical meters (Yellow: 熱/力, Red: 体をつくる, Green: 調子をととのえる, Gold: せいちょうゴールド).
-         - Bottleneck warning label ("⚠️だいじょうぶ？") over the lowest meter.
-         - Friendly advice hint box explaining how the bottleneck works.
-         - Character avatar and speech bubble.
-      
-      2. Menu Schedule (5 Days):
-         - Day 1 (月): ごはん (Yellow), じゃことナッツのつくだに (Red/Yellow tag), かぶのうめづけ (Green)
-         - Day 2 (火): ココアあげパン (Yellow), オムレツ (Red), ビーンズサラダ (Green)
-         - Day 3 (水): わかめごはん (Yellow), たまごやき (Red), たくあんあえ (Green)
-         - Day 4 (木): ごはん (Yellow), ほっけしおやき (Red), ひじきのいために (Green)
-         - Day 5 (金): 麦ごはん (Yellow), ポークハヤシソース (Red), かぼちゃと豆のサラダ (Green)
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>えらんで給食バランスゲーム</title>
+  <style>
+    * { box-sizing: border-box; font-family: "Hiragino Kaku Gothic ProN", "メイリオ", sans-serif; }
+    body { background-color: #eef9ff; margin: 0; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { max-width: 980px; width: 100%; background: #ffffff; padding: 15px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: 4px solid #74b9ff; }
+    
+    h1 { text-align: center; color: #2d3436; font-size: 1.5rem; margin: 0 0 10px 0; letter-spacing: 1px; }
+    .status-header { text-align: center; font-weight: bold; color: #d63031; margin-bottom: 12px; background: #ffeaa7; padding: 8px; border-radius: 12px; font-size: 1.1rem; border: 2px dashed #fdcb6e; }
+    
+    .main-layout { display: flex; flex-wrap: wrap; gap: 15px; }
+    
+    .left-panel { flex: 1.2; min-width: 280px; display: flex; flex-direction: column; justify-content: space-between; }
+    .guide-title { font-weight: bold; text-align: center; margin: 0 0 10px 0; color: #0984e3; font-size: 1rem; background: #e3f2fd; padding: 8px; border-radius: 8px; }
+    
+    .dishes-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 10px; border-radius: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    .dish-title { font-size: 1rem; font-weight: bold; color: #2d3436; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+    .dish-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 8px; color: white; font-weight: bold; }
+    .tag-yellow { background: #e17055; }
+    .tag-red { background: #d63031; }
+    .tag-green { background: #00b894; }
 
-      3. Sound & Animation:
-         - Web Audio API synthesizers for click, submit, coin sound ("チャリン"), finish, and reset.
-         - Step 1: 3-color meters update immediately on submit.
-         - Step 2: 0.5s delay before "せいちょうゴールド" meter updates with coin sound effect.
+    .radio-group { display: flex; justify-content: space-between; gap: 4px; width: 100%; }
+    .radio-group input[type="radio"] { display: none; }
+    
+    .radio-label {
+      flex: 1 1 0px;
+      min-width: 0;
+      text-align: center;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 6px 1px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #555;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
+    .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; box-shadow: 0 3px 0 #0984e3; transform: translateY(-1px); }
 
-      4. Modal & Local Storage:
-         - Full screen evaluation modal after Day 5 showing final avatar, feedback message based on bottleneck, and cloned meter results.
-         - LocalStorage support to remember user name, class, and progress across sessions.
-    </query>
-  </generate_web_app>
-</use_code_canvas>
+    .right-panel { flex: 1.1; min-width: 280px; background: #fafafa; padding: 12px; border-radius: 16px; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
+
+    .vertical-meters-container { display: flex; justify-content: space-around; width: 100%; height: 200px; background: #fff; border: 2px solid #e0e0e0; padding: 15px 5px 8px 5px; border-radius: 12px; margin-bottom: 10px; position: relative; }
+    .v-meter-group { display: flex; flex-direction: column; align-items: center; height: 100%; width: 22%; position: relative; }
+    
+    .v-meter-track { position: relative; width: 32px; flex: 1; background: #f0f0f0; border-radius: 18px; border: 2px solid #ccc; overflow: hidden; display: flex; flex-direction: column-reverse; }
+    .v-meter-fill { width: 100%; height: 0%; transition: height 0.5s ease-out; border-radius: 0 0 16px 16px; }
+    
+    .fill-yellow { background: linear-gradient(0deg, #f1c40f, #fed330); }
+    .fill-red { background: linear-gradient(0deg, #e74c3c, #ff7675); }
+    .fill-green { background: linear-gradient(0deg, #2ecc71, #55efc4); }
+    .fill-gold { background: linear-gradient(0deg, #f1c40f, #f39c12, #ffeb3b); }
+
+    .gold-track-border { border: 2px solid #f1c40f; background: #fffdf0; }
+
+    .v-meter-label { font-size: 0.7rem; font-weight: bold; margin-top: 4px; text-align: center; line-height: 1.1; }
+    .v-meter-val { font-size: 0.8rem; font-weight: bold; color: #333; margin-top: 2px; }
+    
+    .meter-divider { width: 2px; background: #ffeaa7; height: 90%; margin: 0 2px; }
+
+    .limit-marker { position: absolute; top: -14px; background: #e74c3c; color: white; font-size: 0.55rem; padding: 1px 4px; border-radius: 4px; font-weight: bold; display: none; animation: pulse 1s infinite alternate; white-space: nowrap; }
+    @keyframes pulse { 0% { opacity: 0.7; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1.05); } }
+
+    .gold-hint { font-size: 0.75rem; color: #d35400; margin-bottom: 8px; font-weight: bold; line-height: 1.2; text-align: center; background: #fff8e7; padding: 6px; border-radius: 8px; width: 100%; border: 1px solid #ffeaa7; min-height: 38px; display: flex; align-items: center; justify-content: center; }
+
+    .char-box { text-align: center; width: 100%; display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px; border-radius: 10px; border: 1px solid #e0e0e0; }
+    .char-avatar { font-size: 2.5rem; transition: transform 0.3s; line-height: 1; }
+    .speech-bubble { flex: 1; background: #74b9ff; color: white; padding: 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem; text-align: left; line-height: 1.3; min-height: 44px; display: flex; align-items: center; }
+
+    .btn-submit { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #27ae60; transition: all 0.1s; }
+    .btn-submit:active { transform: translateY(3px); box-shadow: 0 1px 0 #27ae60; }
+    .btn-submit:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
+
+    .btn-reset { margin-top: 8px; padding: 5px 10px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+    .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 550px; width: 10
