@@ -25,7 +25,6 @@
     .tag-red { background: #d63031; }
     .tag-green { background: #00b894; }
 
-    /* iPad・タブレット用：ボタンエリアの堅牢なグリッド・フレックス設計 */
     .radio-group { display: flex; justify-content: space-between; gap: 4px; width: 100%; }
     .radio-group input[type="radio"] { display: none; }
     
@@ -37,7 +36,7 @@
       border: 2px solid #ccc;
       padding: 6px 1px;
       border-radius: 8px;
-      font-size: clamp(0.65rem, 1.8vw, 0.78rem);
+      font-size: 0.75rem;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
@@ -86,115 +85,4 @@
     .btn-reset { margin-top: 8px; padding: 5px 10px; background: #b2bec3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
 
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
-    .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 550px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
-    .modal-title { font-size: 1.3rem; font-weight: bold; color: #2d3436; margin: 0 0 10px 0; }
-    .modal-avatar { font-size: 4rem; margin: 5px 0; }
-    .modal-bubble { background: #74b9ff; color: white; padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; line-height: 1.4; text-align: left; }
-    .modal-btn { padding: 12px 30px; background: #0984e3; color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #076bba; }
-    .modal-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #076bba; }
-
-    /* 画面幅が狭い端末用（iPad縦持ち等）の追加レスポンシブ設定 */
-    @media (max-width: 600px) {
-      .radio-group { flex-wrap: wrap; }
-      .radio-label { flex: 1 1 45%; padding: 8px 2px; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h1>🍱 えらんで給食バランスゲーム</h1>
-  <div id="meal-stage" class="status-header">1日目：月ようび</div>
-  
-  <div class="main-layout">
-    <div class="left-panel">
-      <div class="guide-title">きょうの 給食の たべかたを えらぼう！</div>
-      <div id="dishes-container" class="dishes-container"></div>
-      <button id="submit-btn" class="btn-submit" onclick="submitMeal()">決定！ つぎの日へ ➔</button>
-    </div>
-
-    <div class="right-panel">
-      <div id="gold-hint" class="gold-hint">3つの栄養がバランスよくたまると、せいちょうゴールドメーターが伸びるよ！</div>
-
-      <div class="vertical-meters-container" id="meters-box">
-        <div class="v-meter-group">
-          <div id="marker-yellow" class="limit-marker">⚠️だいじょうぶ？</div>
-          <div class="v-meter-track">
-            <div id="meter-yellow" class="v-meter-fill fill-yellow"></div>
-          </div>
-          <div class="v-meter-label" style="color:#d35400;">黄<br>(ねつ)</div>
-          <div id="val-yellow" class="v-meter-val">0</div>
-        </div>
-
-        <div class="v-meter-group">
-          <div id="marker-red" class="limit-marker">⚠️だいじょうぶ？</div>
-          <div class="v-meter-track">
-            <div id="meter-red" class="v-meter-fill fill-red"></div>
-          </div>
-          <div class="v-meter-label" style="color:#c0392b;">赤<br>(からだ)</div>
-          <div id="val-red" class="v-meter-val">0</div>
-        </div>
-
-        <div class="v-meter-group">
-          <div id="marker-green" class="limit-marker">⚠️だいじょうぶ？</div>
-          <div class="v-meter-track">
-            <div id="meter-green" class="v-meter-fill fill-green"></div>
-          </div>
-          <div class="v-meter-label" style="color:#27ae60;">緑<br>(ちょうし)</div>
-          <div id="val-green" class="v-meter-val">0</div>
-        </div>
-
-        <div class="meter-divider"></div>
-
-        <div class="v-meter-group">
-          <div class="v-meter-track gold-track-border">
-            <div id="meter-gold" class="v-meter-fill fill-gold"></div>
-          </div>
-          <div class="v-meter-label" style="color:#d35400;">✨せいちょう<br>ゴールド</div>
-          <div id="val-gold" class="v-meter-val">0</div>
-        </div>
-      </div>
-
-      <div class="char-box">
-        <div id="char-avatar" class="char-avatar">🧍</div>
-        <div id="speech-bubble" class="speech-bubble">
-          メニューごとに たべた量を えらんで「決定！」をおしてね！
-        </div>
-      </div>
-
-      <button class="btn-reset" onclick="resetGame()">はじめから やりなおす</button>
-    </div>
-  </div>
-</div>
-
-<div id="final-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-title">🎉 5日間の けっか はっぴょう 🎉</div>
-    <div id="modal-avatar" class="modal-avatar">👑</div>
-    <div id="modal-bubble" class="modal-bubble">コメントが入ります</div>
-    
-    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left; font-size: 0.9rem;">【さいごの 栄養メーター】</div>
-    <div id="modal-meters-clone" style="margin-bottom: 15px;"></div>
-
-    <button class="modal-btn" onclick="resetGame()">もういちど チャレンジ！</button>
-  </div>
-</div>
-
-<script>
-  let audioCtx = null;
-
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  }
-
-  function playSound(type) {
-    initAudio();
-    if (!audioCtx) return;
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    const now = audioCtx
+    .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 550px; width:
