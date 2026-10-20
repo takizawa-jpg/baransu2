@@ -131,4 +131,365 @@
       </div>
 
       <div class="char-box">
-        <div
+        <div id="char-avatar" class="char-avatar">🧍</div>
+        <div id="speech-bubble" class="speech-bubble">
+          メニューごとに たべた量を えらんで「決定！」をおしてね！
+        </div>
+      </div>
+
+      <button class="btn-reset" onclick="resetGame()">はじめから やりなおす</button>
+    </div>
+  </div>
+</div>
+
+<div id="final-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-title">🎉 5日間の けっか はっぴょう 🎉</div>
+    <div id="modal-avatar" class="modal-avatar">👑</div>
+    <div id="modal-bubble" class="modal-bubble">コメントが入ります</div>
+    
+    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left; font-size: 0.9rem;">【さいごの 栄養メーター】</div>
+    <div id="modal-meters-clone" style="margin-bottom: 15px;"></div>
+
+    <button class="modal-btn" onclick="resetGame()">もういちど チャレンジ！</button>
+  </div>
+</div>
+
+<script>
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+
+  function playSound(type) {
+    initAudio();
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'submit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.08); 
+      osc.frequency.setValueAtTime(783.99, now + 0.16); 
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (type === 'coin') {
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const coinGain = audioCtx.createGain();
+
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+
+      osc1.frequency.setValueAtTime(987.77, now);
+      osc1.frequency.setValueAtTime(1318.51, now + 0.08);
+
+      osc2.frequency.setValueAtTime(1975.53, now);
+      osc2.frequency.setValueAtTime(2637.02, now + 0.08);
+
+      osc1.connect(coinGain);
+      osc2.connect(coinGain);
+      coinGain.connect(audioCtx.destination);
+
+      coinGain.gain.setValueAtTime(0.15, now);
+      coinGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.35);
+      osc2.stop(now + 0.35);
+    } else if (type === 'finish') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); 
+      osc.frequency.setValueAtTime(659.25, now + 0.12); 
+      osc.frequency.setValueAtTime(783.99, now + 0.24); 
+      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    } else if (type === 'reset') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    }
+  }
+
+  const schedule = [
+    {
+      day: "1日目：月ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：エネルギーになる" },
+        { name: "🐟 じゃことナッツのつくだに", color: "red", tag: "赤：体をつくる" },
+        { name: "🥬 かぶのうめづけ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "2日目：火ようび",
+      dishes: [
+        { name: "🍞 ココアあげパン", color: "yellow", tag: "黄：エネルギーになる" },
+        { name: "🍳 オムレツ", color: "red", tag: "赤：体をつくる" },
+        { name: "🥗 ビーンズサラダ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "3日目：水ようび",
+      dishes: [
+        { name: "🍙 わかめごはん", color: "yellow", tag: "黄：エネルギーになる" },
+        { name: "🍳 たまごやき", color: "red", tag: "赤：体をつくる" },
+        { name: "🥢 たくあんあえ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "4日目：木ようび",
+      dishes: [
+        { name: "🍚 ごはん", color: "yellow", tag: "黄：エネルギーになる" },
+        { name: "🐟 ほっけしおやき", color: "red", tag: "赤：体をつくる" },
+        { name: "🍱 ひじきのいために", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    },
+    {
+      day: "5日目：金ようび",
+      dishes: [
+        { name: "🍚 麦ごはん", color: "yellow", tag: "黄：エネルギーになる" },
+        { name: "🍛 ポークハヤシソース", color: "red", tag: "赤：体をつくる" },
+        { name: "🥗 かぼちゃと豆のサラダ", color: "green", tag: "緑：調子をととのえる" }
+      ]
+    }
+  ];
+
+  let currentDay = 0;
+  let totalYellow = 0;
+  let totalRed = 0;
+  let totalGreen = 0;
+
+  function initGame() {
+    currentDay = 0;
+    totalYellow = 0;
+    totalRed = 0;
+    totalGreen = 0;
+    document.getElementById('final-modal').style.display = 'none';
+    updateMetersAndAvatar(false);
+    loadDay(currentDay);
+  }
+
+  function loadDay(dayIndex) {
+    const dayData = schedule[dayIndex];
+    document.getElementById('meal-stage').innerText = dayData.day;
+    
+    const container = document.getElementById('dishes-container');
+    container.innerHTML = '';
+
+    dayData.dishes.forEach((dish, idx) => {
+      const card = document.createElement('div');
+      card.className = 'dish-card';
+      
+      let tagClass = 'tag-yellow';
+      if (dish.color === 'red') tagClass = 'tag-red';
+      if (dish.color === 'green') tagClass = 'tag-green';
+
+      card.innerHTML = `
+        <div class="dish-title">
+          <span>${dish.name}</span>
+          <span class="dish-tag ${tagClass}">${dish.tag}</span>
+        </div>
+        <div class="radio-group">
+          <input type="radio" id="dish_${idx}_1" name="dish_${idx}" value="5" onchange="playSound('click')">
+          <label for="dish_${idx}_1" class="radio-label">ひとくち<br>たべた</label>
+
+          <input type="radio" id="dish_${idx}_2" name="dish_${idx}" value="10" onchange="playSound('click')">
+          <label for="dish_${idx}_2" class="radio-label">はんぶん<br>たべた</label>
+
+          <input type="radio" id="dish_${idx}_3" name="dish_${idx}" value="15" onchange="playSound('click')">
+          <label for="dish_${idx}_3" class="radio-label">ほとんど<br>たべた</label>
+
+          <input type="radio" id="dish_${idx}_4" name="dish_${idx}" value="20" checked onchange="playSound('click')">
+          <label for="dish_${idx}_4" class="radio-label">ぜんぶ<br>たべた</label>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.innerText = (dayIndex < 4) ? "決定！ つぎの日へ ➔" : "決定！ 結果を見る ➔";
+    submitBtn.disabled = false;
+    document.getElementById('speech-bubble').innerText = "メニューごとに たべた量を えらんで「決定！」をおしてね！";
+  }
+
+  function submitMeal() {
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+
+    const dayData = schedule[currentDay];
+
+    dayData.dishes.forEach((dish, idx) => {
+      const selectedValue = parseInt(document.querySelector(`input[name="dish_${idx}"]:checked`).value);
+      if (dish.color === 'yellow') totalYellow += selectedValue;
+      if (dish.color === 'red') totalRed += selectedValue;
+      if (dish.color === 'green') totalGreen += selectedValue;
+    });
+
+    playSound('submit');
+
+    updateMetersAndAvatar(true);
+
+    setTimeout(() => {
+      updateGoldMeter();
+
+      setTimeout(() => {
+        if (currentDay < 4) {
+          currentDay++;
+          loadDay(currentDay);
+        } else {
+          playSound('finish');
+          showFinalResult();
+        }
+      }, 600);
+
+    }, 550);
+  }
+
+  function updateMetersAndAvatar(isAnimated = false) {
+    const maxVal = 100;
+
+    const yellowPct = Math.min(100, Math.round((totalYellow / maxVal) * 100));
+    const redPct = Math.min(100, Math.round((totalRed / maxVal) * 100));
+    const greenPct = Math.min(100, Math.round((totalGreen / maxVal) * 100));
+
+    document.getElementById('meter-yellow').style.height = yellowPct + '%';
+    document.getElementById('meter-red').style.height = redPct + '%';
+    document.getElementById('meter-green').style.height = greenPct + '%';
+
+    document.getElementById('val-yellow').innerText = totalYellow;
+    document.getElementById('val-red').innerText = totalRed;
+    document.getElementById('val-green').innerText = totalGreen;
+
+    document.getElementById('marker-yellow').style.display = 'none';
+    document.getElementById('marker-red').style.display = 'none';
+    document.getElementById('marker-green').style.display = 'none';
+
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    const hintElem = document.getElementById('gold-hint');
+
+    if (currentDay > 0 || totalYellow > 0 || totalRed > 0 || totalGreen > 0) {
+      if (minVal === totalYellow && totalYellow < totalRed && totalYellow < totalGreen) {
+        document.getElementById('marker-yellow').style.display = 'block';
+        hintElem.innerText = "⚠️【黄 (ごはん・パン)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (minVal === totalRed && totalRed < totalYellow && totalRed < totalGreen) {
+        document.getElementById('marker-red').style.display = 'block';
+        hintElem.innerText = "⚠️【赤 (魚・肉・たまご)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (minVal === totalGreen && totalGreen < totalYellow && totalGreen < totalRed) {
+        document.getElementById('marker-green').style.display = 'block';
+        hintElem.innerText = "⚠️【緑 (野菜・ひじきなど)】が足りなくてゴールドメーターが増えないよ！";
+      } else if (totalYellow === totalRed && totalRed === totalGreen) {
+        hintElem.innerText = "✨ すごい！3つの栄養がぴったりそろってゴールドメーターが順調！";
+      } else {
+        hintElem.innerText = "⚠️ 一番少ない栄養の高さに合わせてゴールドメーターが伸びるよ！";
+      }
+    }
+
+    if (!isAnimated) {
+      updateGoldMeter(false);
+    }
+  }
+
+  function updateGoldMeter(playSoundEffect = true) {
+    const maxVal = 100;
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    const goldPct = Math.min(100, Math.round((minVal / maxVal) * 100));
+
+    const goldMeter = document.getElementById('meter-gold');
+    const goldVal = document.getElementById('val-gold');
+
+    const prevVal = parseInt(goldVal.innerText) || 0;
+    
+    goldMeter.style.height = goldPct + '%';
+    goldVal.innerText = minVal;
+
+    if (playSoundEffect && minVal > prevVal) {
+      playSound('coin');
+    }
+
+    const avatar = document.getElementById('char-avatar');
+    if (goldPct >= 100) {
+      avatar.innerText = "👑";
+    } else if (goldPct >= 70) {
+      avatar.innerText = "😃";
+    } else if (totalGreen <= 20 && currentDay >= 2) {
+      avatar.innerText = "😫";
+    } else if (totalYellow <= 20 && currentDay >= 2) {
+      avatar.innerText = "🥱";
+    } else {
+      avatar.innerText = "🧍";
+    }
+  }
+
+  function showFinalResult() {
+    const minVal = Math.min(totalYellow, totalRed, totalGreen);
+    let resultAvatar = "😃";
+    let resultMsg = "";
+
+    if (minVal >= 100) {
+      resultAvatar = "👑";
+      resultMsg = "【パーフェクト！ゴールドメーターまんたん！】\n毎日のこさず全部たべたね！「黄・赤・緑」の栄養がバッチリそろって、せいちょうパワーが全開です！";
+    } else if (minVal >= 70) {
+      resultAvatar = "🦸‍♂️";
+      resultMsg = "【せいちょうゴールドメーター かなり高め！】\nバランスよく食べることができたね！あと少しでパーフェクト！苦手なものも一口ずつ挑戦してみよう！";
+    } else if (totalGreen < totalYellow && totalGreen < totalRed) {
+      resultAvatar = "🥀";
+      resultMsg = "【緑（野菜や海藻など）が 不足ぎみ…】\nごはんやお肉は食べたけど、お野菜や海藻が少なかったのでゴールドメーターがあまり伸びませんでした。緑の仲間は「体の調子をととのえる」大切な役割があるよ！";
+    } else if (totalYellow < totalRed && totalYellow < totalGreen) {
+      resultAvatar = "🥱";
+      resultMsg = "【黄（ごはん・パン）が 不足ぎみ…】\nごはんやパンがすくなかったので、力が出にくくなっちゃうかも！黄色の栄養は「動くためのエネルギー」になるよ！";
+    } else if (totalRed < totalYellow && totalRed < totalGreen) {
+      resultAvatar = "🦴";
+      resultMsg = "【赤（魚・肉・たまご）が 不足ぎみ…】\n赤色の栄養がすくなかったよ！赤の栄養は「筋肉や血、骨をつくる」体のもとになるんだよ！";
+    } else {
+      resultAvatar = "😅";
+      resultMsg = "【栄養の偏りに注意！】\n残したものが多くて、ゴールドメーターがあまりたまりませんでした。3つの栄養をバランスよく食べることで、体は大きく成長するよ！";
+    }
+
+    document.getElementById('modal-avatar').innerText = resultAvatar;
+    document.getElementById('modal-bubble').innerText = resultMsg;
+    
+    const metersClone = document.getElementById('meters-box').cloneNode(true);
+    metersClone.querySelectorAll('.limit-marker').forEach(m => m.style.display = 'none');
+    
+    const cloneContainer = document.getElementById('modal-meters-clone');
+    cloneContainer.innerHTML = '';
+    cloneContainer.appendChild(metersClone);
+
+    document.getElementById('final-modal').style.display = 'flex';
+  }
+
+  function resetGame() {
+    playSound('reset');
+    initGame();
+  }
+
+  window.onload = initGame;
+</script>
+
+</body>
+</html>
