@@ -14,24 +14,25 @@
     
     .main-layout { display: flex; flex-wrap: wrap; gap: 15px; }
     
-    .left-panel { flex: 1.2; min-width: 320px; display: flex; flex-direction: column; justify-content: space-between; }
+    .left-panel { flex: 1.2; min-width: 300px; display: flex; flex-direction: column; justify-content: space-between; }
     .guide-title { font-weight: bold; text-align: center; margin: 0 0 10px 0; color: #0984e3; font-size: 1.05rem; background: #e3f2fd; padding: 8px; border-radius: 8px; }
     
     .dishes-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
     .dish-card { background: #fffbe6; border: 2px solid #ffeaa7; padding: 10px 12px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-    .dish-title { font-size: 1.05rem; font-weight: bold; color: #2d3436; display: flex; align-items: center; justify-content: space-between; }
+    .dish-title { font-size: 1.05rem; font-weight: bold; color: #2d3436; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
     .dish-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; }
     .tag-yellow { background: #e17055; }
     .tag-red { background: #d63031; }
     .tag-green { background: #00b894; }
 
-    .radio-group { display: flex; justify-content: space-between; gap: 4px; }
+    /* タブレット画面対応のラジオボタンレイアウト */
+    .radio-group { display: flex; justify-content: space-between; gap: 4px; width: 100%; }
     .radio-group input[type="radio"] { display: none; }
-    .radio-label { flex: 1; text-align: center; background: white; border: 2px solid #ccc; padding: 8px 2px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #555; white-space: nowrap; }
+    .radio-label { flex: 1; min-width: 0; text-align: center; background: white; border: 2px solid #ccc; padding: 8px 2px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #555; word-break: break-all; line-height: 1.2; }
     .radio-label:hover { border-color: #74b9ff; background: #f0f8ff; }
     .radio-group input[type="radio"]:checked + .radio-label { border-color: #0984e3; background: #74b9ff; color: white; box-shadow: 0 3px 0 #0984e3; transform: translateY(-2px); }
 
-    .right-panel { flex: 1.2; min-width: 320px; background: #fafafa; padding: 12px; border-radius: 16px; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
+    .right-panel { flex: 1.2; min-width: 300px; background: #fafafa; padding: 12px; border-radius: 16px; border: 2px solid #eee; display: flex; flex-direction: column; align-items: center; }
 
     .vertical-meters-container { display: flex; justify-content: space-around; width: 100%; height: 200px; background: #fff; border: 2px solid #e0e0e0; padding: 15px 5px 8px 5px; border-radius: 12px; margin-bottom: 10px; position: relative; }
     .v-meter-group { display: flex; flex-direction: column; align-items: center; height: 100%; width: 22%; position: relative; }
@@ -133,117 +134,3 @@
       <div class="char-box">
         <div id="char-avatar" class="char-avatar">🧍</div>
         <div id="speech-bubble" class="speech-bubble">
-          メニューごとに たべた量を えらんで「決定！」をおしてね！
-        </div>
-      </div>
-
-      <button class="btn-reset" onclick="resetGame()">はじめから やりなおす</button>
-    </div>
-  </div>
-</div>
-
-<div id="final-modal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-title">🎉 5日間の けっか はっぴょう 🎉</div>
-    <div id="modal-avatar" class="modal-avatar">👑</div>
-    <div id="modal-bubble" class="modal-bubble">コメントが入ります</div>
-    
-    <div style="font-weight: bold; margin-bottom: 8px; color: #555; text-align: left; font-size: 0.9rem;">【さいごの 栄養メーター】</div>
-    <div id="modal-meters-clone" style="margin-bottom: 15px;"></div>
-
-    <button class="modal-btn" onclick="resetGame()">もういちど チャレンジ！</button>
-  </div>
-</div>
-
-<script>
-  let audioCtx = null;
-
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  }
-
-  function playSound(type) {
-    initAudio();
-    if (!audioCtx) return;
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    const now = audioCtx.currentTime;
-
-    if (type === 'click') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, now);
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-      osc.start(now);
-      osc.stop(now + 0.08);
-    } else if (type === 'submit') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, now); 
-      osc.frequency.setValueAtTime(659.25, now + 0.08); 
-      osc.frequency.setValueAtTime(783.99, now + 0.16); 
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    } else if (type === 'coin') {
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const coinGain = audioCtx.createGain();
-
-      osc1.type = 'sine';
-      osc2.type = 'sine';
-
-      osc1.frequency.setValueAtTime(987.77, now);
-      osc1.frequency.setValueAtTime(1318.51, now + 0.08);
-
-      osc2.frequency.setValueAtTime(1975.53, now);
-      osc2.frequency.setValueAtTime(2637.02, now + 0.08);
-
-      osc1.connect(coinGain);
-      osc2.connect(coinGain);
-      coinGain.connect(audioCtx.destination);
-
-      coinGain.gain.setValueAtTime(0.15, now);
-      coinGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + 0.35);
-      osc2.stop(now + 0.35);
-    } else if (type === 'finish') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, now); 
-      osc.frequency.setValueAtTime(659.25, now + 0.12); 
-      osc.frequency.setValueAtTime(783.99, now + 0.24); 
-      osc.frequency.setValueAtTime(1046.50, now + 0.36); 
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
-      osc.start(now);
-      osc.stop(now + 0.6);
-    } else if (type === 'reset') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-      osc.start(now);
-      osc.stop(now + 0.12);
-    }
-  }
-
-  const schedule = [
-    {
-      day: "1日目：月ようび",
-      dishes: [
-        { name: "🍚 ごはん", color: "yellow", tag: "黄：熱や力になる" },
-        { name: "🐟 じゃことナッツのつくだに", color: "red", tag: "赤・黄：体をつくる・力になる" },
-        { name: "🥬 かぶのうめづけ", color: "green", tag: "緑：調子をととのえる" }
-      ]
-    },
-    {
-      day: "2日
